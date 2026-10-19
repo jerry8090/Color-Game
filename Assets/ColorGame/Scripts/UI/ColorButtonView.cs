@@ -42,8 +42,13 @@ namespace ColorGame.UI
             label.text = definition.displayName.ToUpperInvariant();
 
             // Dark text on bright colors (like yellow), white text on dark colors.
-            float brightness = 0.299f * definition.uiColor.r + 0.587f * definition.uiColor.g + 0.114f * definition.uiColor.b;
-            label.color = brightness > 0.7f ? new Color(0.15f, 0.1f, 0.2f) : Color.white;
+            //float brightness = 0.299f * definition.uiColor.r 
+            //                 + 0.587f * definition.uiColor.g 
+            //                 + 0.114f * definition.uiColor.b;
+            //label.color = brightness > 0.7f ? new Color(0.15f, 0.1f, 0.2f) : Color.white;
+            
+             // Always use black text on every color button.
+              label.color = Color.black;
 
             if (iconImage != null)
             {
