@@ -18,13 +18,16 @@ namespace ScatterGame.Core
 
         /// <summary>Return to player using exact milli-credits (no rounding loss).</summary>
         public double Rtp => TotalBetCredits == 0 ? 0 : TotalWinMilli / (1000.0 * TotalBetCredits);
+        
+        /// <summary>RTP after flooring each round to whole credits, which is what players actually receive.</summary>
+        public double SettledRtp => TotalBetCredits == 0 ? 0 : (double)TotalWinCreditsSettled / TotalBetCredits;
 
         public double HitFrequency => Rounds == 0 ? 0 : (double)RoundsWithWin / Rounds;
         public double BonusFrequency => Rounds == 0 ? 0 : (double)BonusRounds / Rounds;
 
         public override string ToString()
         {
-            return "Rounds " + Rounds + " | RTP " + (Rtp * 100).ToString("F2") + "% | Hit " + (HitFrequency * 100).ToString("F2") +
+            return "Rounds " + Rounds + " | RTP " + (Rtp * 100).ToString("F2") + "% (settled " + (SettledRtp * 100).ToString("F2") + "%) | Hit " + (HitFrequency * 100).ToString("F2") +
                    "% | Bonus every " + (BonusRounds == 0 ? "never" : (Rounds / (double)BonusRounds).ToString("F1") + " rounds") +
                    " | Largest win " + LargestWinInBets.ToString("F1") + "x bet | Max multiplier " + MaxMultiplierSeen +
                    " | Cascade limit hits " + CascadeLimitHits;
