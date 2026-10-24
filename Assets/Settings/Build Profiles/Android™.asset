@@ -25,6 +25,12 @@ MonoBehaviour:
   - m_enabled: 1
     m_path: Assets/Scenes/MainMenu.unity
     m_guid: 8168cb2ea5a0ff3408e54d7bdd443e32
+  - m_enabled: 1
+    m_path: Assets/ColorGame/Scenes/ColorGameLandscapeNew.unity
+    m_guid: ebc1247ddac8db14d99af933cd6f3947
+  - m_enabled: 1
+    m_path: Assets/ScatterGame/Scene/ScatterGame.unity
+    m_guid: 381e44d3e6fe691408d7ef4aa877cdaa
   m_HasScriptingDefines: 0
   m_ScriptingDefines: []
   m_PlayerSettingsYaml:
