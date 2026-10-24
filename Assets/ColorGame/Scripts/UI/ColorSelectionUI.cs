@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 using TMPro;
 using UnityEngine;
 using ColorGame.Core;
@@ -7,13 +8,14 @@ using ColorGame.Gameplay;
 namespace ColorGame.UI
 {
     /// <summary>
-    /// Creates the color buttons from the config and shows which one is selected.
-    /// Clicks are forwarded to ColorGameManager. This script never decides game outcomes.
+    /// Creates the color betting areas from the config. A tap puts one chip of the selected amount on that color
+    /// (BetSlip decides if it is allowed). Bills and totals are drawn from the slip's events.
     /// </summary>
     public class ColorSelectionUI : MonoBehaviour
     {
         [SerializeField] private ColorGameConfig config;
         [SerializeField] private ColorGameManager gameManager;
+        [SerializeField] private BetSlip betSlip;
         [SerializeField] private ColorButtonView buttonPrefab;
         [SerializeField] private Transform buttonContainer;
         [SerializeField] private TMP_Text selectedColorLabel;
@@ -23,12 +25,16 @@ namespace ColorGame.UI
 
         private void Awake()
         {
-            if (config == null || gameManager == null || buttonPrefab == null ||
+            if (config == null || gameManager == null || betSlip == null || buttonPrefab == null ||
                 buttonContainer == null || selectedColorLabel == null)
             {
-                Debug.LogError("[ColorSelectionUI] A reference is missing in the Inspector.", this);
+                Debug.LogError("[ColorSelectionUI] A reference is missing in the Inspector (Bet Slip included).", this);
                 return;
             }
+
+            selectedColorLabel.enableAutoSizing = true;
+            selectedColorLabel.fontSizeMin = 18f;
+            selectedColorLabel.fontSizeMax = 40f;
 
             BuildButtons();
             isReady = views.Count > 0;
@@ -38,16 +44,21 @@ namespace ColorGame.UI
         {
             if (!isReady) return;
 
-            gameManager.OnSelectedColorChanged += HandleSelectedColorChanged;
             gameManager.OnStateChanged += HandleStateChanged;
+            betSlip.OnChipPlaced += HandleChipPlaced;
+            betSlip.OnSlipCleared += HandleSlipCleared;
+            SyncFromSlip();
             Refresh();
         }
 
         private void OnDisable()
         {
-            if (gameManager == null) return;
-            gameManager.OnSelectedColorChanged -= HandleSelectedColorChanged;
-            gameManager.OnStateChanged -= HandleStateChanged;
+            if (gameManager != null) gameManager.OnStateChanged -= HandleStateChanged;
+            if (betSlip != null)
+            {
+                betSlip.OnChipPlaced -= HandleChipPlaced;
+                betSlip.OnSlipCleared -= HandleSlipCleared;
+            }
         }
 
         private void BuildButtons()
@@ -72,12 +83,24 @@ namespace ColorGame.UI
 
         private void HandleColorClicked(GameColor color)
         {
-            gameManager.TrySelectColor(color);
+            // BetSlip validates (chip selected, balance, betting open). The manager only remembers the last tap.
+            if (betSlip.TryPlaceChip(color)) gameManager.TrySelectColor(color);
         }
 
-        private void HandleSelectedColorChanged(bool hasColor, GameColor color)
+        private void HandleChipPlaced(GameColor color, int denomination, int colorTotal)
         {
-            Refresh();
+            ColorButtonView view = Find(color);
+            if (view == null) return;
+
+            view.AddBill(denomination, colorTotal);
+            view.PlayTapFeedback(); // a short flash only: no selected state
+            UpdateLabel();
+        }
+
+        private void HandleSlipCleared()
+        {
+            foreach (ColorButtonView view in views) view.ClearBills();
+            UpdateLabel();
         }
 
         private void HandleStateChanged(GameState state)
@@ -85,32 +108,46 @@ namespace ColorGame.UI
             Refresh();
         }
 
-        private void Refresh()
+        // Rebuilds the bills from the slip (for example when this object is enabled again).
+        private void SyncFromSlip()
         {
-            bool canInteract = gameManager.State == GameState.Idle;
-
             foreach (ColorButtonView view in views)
             {
-                bool isSelected = gameManager.HasSelectedColor && view.AssignedColor == gameManager.SelectedColor;
-                view.SetSelected(isSelected);
-                view.SetInteractable(canInteract);
+                int total = betSlip.GetTotal(view.AssignedColor);
+                if (total > 0) view.SetBills(betSlip.GetChips(view.AssignedColor), total);
+                else view.ClearBills();
             }
-
             UpdateLabel();
         }
 
+        private void Refresh()
+        {
+            bool canInteract = gameManager.State == GameState.Idle;
+            foreach (ColorButtonView view in views) view.SetInteractable(canInteract);
+            UpdateLabel();
+        }
+
+        private ColorButtonView Find(GameColor color)
+        {
+            foreach (ColorButtonView view in views)
+            {
+                if (view.AssignedColor == color) return view;
+            }
+            return null;
+        }
+
+        // No color names here: only how many colors carry a bet.
         private void UpdateLabel()
         {
-            if (gameManager.HasSelectedColor &&
-                config.TryGetColorDefinition(gameManager.SelectedColor, out ColorDefinition definition))
+            int colorsWithBets = 0;
+            foreach (ColorDefinition definition in config.Colors)
             {
-                string hex = ColorUtility.ToHtmlStringRGB(definition.uiColor);
-                selectedColorLabel.text = $"SELECTED COLOR: <color=#{hex}>{definition.displayName}</color>";
+                if (definition != null && betSlip.GetTotal(definition.color) > 0) colorsWithBets++;
             }
-            else
-            {
-                selectedColorLabel.text = "SELECTED COLOR: NONE";
-            }
+
+            selectedColorLabel.text = colorsWithBets == 0
+                ? "PLACE YOUR BETS"
+                : $"BETS ON {colorsWithBets} {(colorsWithBets == 1 ? "COLOR" : "COLORS")}";
         }
     }
 }

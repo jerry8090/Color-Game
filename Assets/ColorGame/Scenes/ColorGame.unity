@@ -649,6 +649,7 @@ MonoBehaviour:
   betManager: {fileID: 1926116290}
   walletManager: {fileID: 392662052}
   gameManager: {fileID: 904205060}
+  betSlip: {fileID: 685682858}
   buttonPrefab: {fileID: 7164853979348760063, guid: aad40f6eecf113244b0f36e4c9cf8e54, type: 3}
   buttonContainer: {fileID: 162021440}
   selectedBetLabel: {fileID: 1189914162}
@@ -1265,6 +1266,12 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: 40c30754212da2649a255a5ab7cdb83e, type: 3}
     volume: 1
   - type: 13
+    clip: {fileID: 0}
+    volume: 1
+  - type: 14
+    clip: {fileID: 0}
+    volume: 1
+  - type: 15
     clip: {fileID: 0}
     volume: 1
   physicsVolume: 1
@@ -2493,7 +2500,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColorGame.UI.ColorSelectionUI
   config: {fileID: 11400000, guid: be10274c5bc73d141919e35c9a9fc537, type: 2}
   gameManager: {fileID: 904205060}
-  buttonPrefab: {fileID: 2139585541575855315, guid: 3daecd2ef915bf148bb36f12498b6da2, type: 3}
+  betSlip: {fileID: 685682858}
+  buttonPrefab: {fileID: 3682151685500032270, guid: 3daecd2ef915bf148bb36f12498b6da2, type: 3}
   buttonContainer: {fileID: 629719788}
   selectedColorLabel: {fileID: 707325577}
 --- !u!1 &637319466
@@ -2530,6 +2538,54 @@ Transform:
   - {fileID: 485372916}
   m_Father: {fileID: 1411408908}
   m_LocalEulerAnglesHint: {x: 28, y: 2.51, z: 0}
+--- !u!1 &685682857
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 685682859}
+  - component: {fileID: 685682858}
+  m_Layer: 0
+  m_Name: BetSlip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &685682858
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 685682857}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bbe4ea588ba9764682be5238df51bf0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ColorGame.Gameplay.BetSlip
+  config: {fileID: 11400000, guid: be10274c5bc73d141919e35c9a9fc537, type: 2}
+  betManager: {fileID: 1926116290}
+  walletManager: {fileID: 392662052}
+  maxChipsPerColor: 99
+--- !u!4 &685682859
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 685682857}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &693347040
 GameObject:
   m_ObjectHideFlags: 0
@@ -3389,6 +3445,7 @@ MonoBehaviour:
   config: {fileID: 11400000, guid: be10274c5bc73d141919e35c9a9fc537, type: 2}
   walletManager: {fileID: 392662052}
   betManager: {fileID: 1926116290}
+  betSlip: {fileID: 685682858}
   historyManager: {fileID: 1543658440}
   saveManager: {fileID: 2131469667}
   rollPresenter: {fileID: 1411408909}
@@ -5087,6 +5144,51 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1189914160}
   m_CullTransparentMesh: 1
+--- !u!1 &1210875838
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1210875840}
+  - component: {fileID: 1210875839}
+  m_Layer: 0
+  m_Name: SceneOrientation
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1210875839
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1210875838}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8698af46c305636468125841b844a09b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Shared.UI.SceneOrientation
+  mode: 1
+--- !u!4 &1210875840
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1210875838}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1214277581
 GameObject:
   m_ObjectHideFlags: 0
@@ -10479,3 +10581,5 @@ SceneRoots:
   - {fileID: 1701050096}
   - {fileID: 1411408908}
   - {fileID: 1800482074}
+  - {fileID: 685682859}
+  - {fileID: 1210875840}

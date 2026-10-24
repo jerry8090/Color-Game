@@ -146,10 +146,27 @@ namespace ColorGame.Sound
             audioManager.PlaySfx(SfxType.SlotStop);
         }
 
-        // Only raised for rounds with a wager. A round without a bet plays no win or lose sound.
+                private string lastSoundRoundId;
+        // Only raised for rounds with a wager. Exactly ONE result sound per round.
         private void HandleRoundCompleted(GameRound round, PayoutResult payout)
         {
-            audioManager.PlaySfx(payout.IsWin ? SfxType.Win : SfxType.Lose);
+            if (round != null)
+            {
+                if (round.roundId == lastSoundRoundId) return; // never play twice for the same round
+                lastSoundRoundId = round.roundId;
+            }
+
+            if (payout == null || !payout.IsWin || payout.Winnings <= 0)
+            {
+                audioManager.PlaySfx(SfxType.Lose);
+                return;
+            }
+
+            // Tier = most cubes showing one bet color (the same tier the payout table uses).
+            SfxType type = payout.BestMatchCount >= 3 ? SfxType.Match3
+                         : payout.BestMatchCount == 2 ? SfxType.Match2
+                         : SfxType.Win;
+            audioManager.PlaySfx(type);
         }
 
         // ---------- Machine and physics ----------

@@ -28,14 +28,14 @@ public static class ColorGameHistoryHubInstaller
             return;
         }
 
-        if (Object.FindFirstObjectByType<HistoryHubUI>(FindObjectsInactive.Include) != null)
+        if (Object.FindAnyObjectByType<HistoryHubUI>(FindObjectsInactive.Include) != null)
         {
             Debug.Log("[HistoryHub] Already installed. Nothing to do.");
             return;
         }
 
-        GameHistoryUI history = Object.FindFirstObjectByType<GameHistoryUI>(FindObjectsInactive.Include);
-        MainMenuController menu = Object.FindFirstObjectByType<MainMenuController>(FindObjectsInactive.Include);
+        GameHistoryUI history = Object.FindAnyObjectByType<GameHistoryUI>(FindObjectsInactive.Include);
+        MainMenuController menu = Object.FindAnyObjectByType<MainMenuController>(FindObjectsInactive.Include);
         if (history == null || menu == null)
         {
             Debug.LogError("[HistoryHub] Open the MainMenu scene first. It needs the History panel (GameHistoryUI) and MainMenuController.");
@@ -86,7 +86,7 @@ public static class ColorGameHistoryHubInstaller
         hubObject.FindProperty("openButton").objectReferenceValue = menuHistoryButton;
         hubObject.FindProperty("hubPanel").objectReferenceValue = hub;
         hubObject.FindProperty("backButton").objectReferenceValue = backButton;
-        AudioManager audio = Object.FindFirstObjectByType<AudioManager>(FindObjectsInactive.Include);
+        AudioManager audio = Object.FindAnyObjectByType<AudioManager>(FindObjectsInactive.Include);
         if (audio != null) hubObject.FindProperty("audioManager").objectReferenceValue = audio;
         hubObject.ApplyModifiedPropertiesWithoutUndo();
 

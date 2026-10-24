@@ -11,7 +11,7 @@ namespace ColorGame.Core
         Green,    // 1
         Blue,     // 2
         Yellow,   // 3
-        Pink,     // 4
-        White     // 5
+        Purple,   // 4
+        Orange     // 5
     }
 }
