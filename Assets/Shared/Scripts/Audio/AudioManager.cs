@@ -21,7 +21,9 @@ namespace Shared.Audio
         RackMove,
         CountdownOpen,
         CountdownTick,
-        CountdownFinal
+        CountdownFinal,
+        Match2,
+        Match3
     }
 
     /// <summary>Which volume slider and playback path a sound uses.</summary>

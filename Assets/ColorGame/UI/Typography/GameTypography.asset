@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21c7d8d5a9406b5458a9c390a40a356f, type: 3}
+  m_Name: GameTypography
+  m_EditorClassIdentifier: Assembly-CSharp::Shared.UI.GameTypography
+  font: {fileID: 11400000, guid: 365e89245d8f50d46b9ec75a3d784a0e, type: 2}
+  titleMaterial: {fileID: 2100000, guid: effabbcf91a380f4f875fb74f24f9ae7, type: 2}
+  numberMaterial: {fileID: 2100000, guid: 3425206eabe3bb9499b260f548d29e56, type: 2}
+  buttonMaterial: {fileID: 2100000, guid: 96da15d10a587fd4f8be0d1fb1867efb, type: 2}
+  labelMaterial: {fileID: 2100000, guid: eae3354a61b56fb40bf4ade7ec7c0912, type: 2}
+  bodyMaterial: {fileID: 2100000, guid: f919ecdaf0c543c49ae6908667e08ea5, type: 2}
+  billMaterial: {fileID: 2100000, guid: dcf457f40af7faa4e8d5107e6eb1f622, type: 2}

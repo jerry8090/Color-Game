@@ -1,7 +1,9 @@
 {
     "name": "ScatterGame.Runtime",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "GUID:71cb1d055f057654ea582976ff828bf8"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
