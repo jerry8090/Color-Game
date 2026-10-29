@@ -62,6 +62,14 @@ namespace ScatterGame.Integration
         [SerializeField] private float autoDelaySeconds = 0.9f;
         [SerializeField] private float bannerHold = 1.4f;
 
+        [Header("Sounds")]
+        [Tooltip("Most different winning symbols that play their own sound in one cascade (highest paying first).")]
+        [SerializeField] private int maxSymbolSoundsPerCascade = 2;
+        [Tooltip("Also play the Wild's own sound when a Wild takes part in a win.")]
+        [SerializeField] private bool playWildSound = true;
+        [Tooltip("Development only: logs every symbol and multiplier sound that plays.")]
+        [SerializeField] private bool logSounds = false;
+
         public ScatterUiState State { get; private set; } = ScatterUiState.Idle;
 
         private ScatterGameSettings settings;
@@ -76,6 +84,9 @@ namespace ScatterGame.Integration
         private float speed = 1f;
         private long balanceBase;
         private long runningMilli;
+
+        private int scatterId = -1;
+        private readonly MultiplierSoundTracker multiplierTracker = new MultiplierSoundTracker();
 
         private int CurrentBet => settings.BetAmounts[betIndex];
 
@@ -114,6 +125,10 @@ namespace ScatterGame.Integration
             settings = roundService.Settings;
             config = settings.BuildSlotConfig();
             wildId = config.WildSymbolId;
+            foreach (SymbolDefinition symbol in config.Symbols)
+            {
+                if (symbol != null && symbol.IsScatter) { scatterId = symbol.Id; break; }
+            }
 
             if (!grid.Init(settings))
             {
@@ -218,7 +233,7 @@ namespace ScatterGame.Integration
         {
             autoOn = on;
             autoTimer = 0f;
-            if (autoLabel != null) autoLabel.text = on ? "AUTO: ON" : "AUTO";
+            if (autoLabel != null) autoLabel.text = on ? "ON" : "AUTO";
         }
 
         private void GoHome()
@@ -298,13 +313,14 @@ namespace ScatterGame.Integration
             if (stopAuto) SetAuto(false);
         }
 
-        // One spin: reels, then every cascade. Used for the paid spin and for every free spin.
+               // One spin: reels, then every cascade. Used for the paid spin and for every free spin.
         private IEnumerator PlaySpin(SpinResult spin, bool isFree, bool resetMultiplier)
         {
             if (resetMultiplier)
             {
                 int[] ladder = isFree ? config.FreeSpinMultiplierLadder : config.PaidMultiplierLadder;
                 hud.SetMultiplier(Mathf.Min(ladder[0], config.MaxMultiplier), false);
+                multiplierTracker.Reset(); // a new multiplier run: its first level plays its sound again
             }
 
             State = ScatterUiState.Spinning;
@@ -313,7 +329,7 @@ namespace ScatterGame.Integration
 
             if (spin.ScatterCount >= config.MinScattersForBonus)
             {
-                PlaySfx(SfxType.Select);
+                if (!PlaySymbolSound(scatterId, "scatter bonus")) PlaySfx(SfxType.Select); // old click if no Scatter sound
                 yield return grid.PulseCategory(SymbolCategory.Scatter);
             }
 
@@ -328,6 +344,8 @@ namespace ScatterGame.Integration
             foreach (CascadeStep step in spin.Steps)
             {
                 hud.SetMultiplier(step.Multiplier, true);
+                PlayMultiplierSound(step.Multiplier);
+                PlayWinSounds(step);
 
                 HashSet<GridPosition> winning = new HashSet<GridPosition>();
                 foreach (SymbolWin win in step.Wins)
@@ -379,6 +397,104 @@ namespace ScatterGame.Integration
         }
 
         // ---------- Helpers ----------
+
+        // ---------- Symbol and multiplier sounds ----------
+
+        // Called once per winning cascade, from the playback of an already-settled result. Never from Update.
+        private void PlayWinSounds(CascadeStep step)
+        {
+            foreach (int id in ScatterSoundPlanner.PickWinSymbols(step.Wins, HasWinSound, maxSymbolSoundsPerCascade))
+            {
+                PlaySymbolSound(id, "win");
+            }
+
+            if (playWildSound && ScatterSoundPlanner.WildTookPart(step.Wins, step.GridBefore, wildId))
+            {
+                PlaySymbolSound(wildId, "wild in a win");
+            }
+        }
+
+        private bool HasWinSound(int symbolId)
+        {
+            return settings.TryGetWinSound(symbolId, out _, out _);
+        }
+
+        // True if the symbol has a sound (so the caller can fall back to another sound when it has none).
+        private bool PlaySymbolSound(int symbolId, string reason)
+        {
+            if (audioManager == null || symbolId < 0) return false;
+            if (!settings.TryGetWinSound(symbolId, out AudioClip clip, out float volume)) return false;
+
+            audioManager.PlayClip(clip, SfxChannel.Symbol, volume);
+            if (logSounds) Debug.Log("[ScatterSound] symbol " + symbolId + " (" + reason + "): " + clip.name, this);
+            return true;
+        }
+
+        // One sound per NEW multiplier level. The same level again plays nothing.
+        private void PlayMultiplierSound(int multiplier)
+        {
+            if (!multiplierTracker.ShouldPlay(multiplier)) return;
+
+            if (audioManager == null || !settings.TryGetMultiplierSound(multiplier, out AudioClip clip, out float volume))
+            {
+                if (logSounds) Debug.Log("[ScatterSound] x" + multiplier + ": no sound assigned.", this);
+                return;
+            }
+
+            audioManager.PlayClip(clip, SfxChannel.Multiplier, volume);
+            if (logSounds) Debug.Log("[ScatterSound] x" + multiplier + ": " + clip.name, this);
+        }
+
+        // Right-click the component header in Play mode. Plays every assigned sound once, one after another.
+        [ContextMenu("TEST: Play All Multiplier Sounds")]
+        private void TestMultiplierSounds()
+        {
+            if (!isReady) { Debug.LogWarning("[ScatterGameController] Press Play first."); return; }
+            StartCoroutine(TestSoundsRoutine(true));
+        }
+
+        [ContextMenu("TEST: Play All Symbol Sounds")]
+        private void TestSymbolSounds()
+        {
+            if (!isReady) { Debug.LogWarning("[ScatterGameController] Press Play first."); return; }
+            StartCoroutine(TestSoundsRoutine(false));
+        }
+
+        private IEnumerator TestSoundsRoutine(bool multipliers)
+        {
+            int count = multipliers ? config.MaxMultiplier : settings.Symbols.Count;
+            for (int i = 0; i < count; i++)
+            {
+                AudioClip clip;
+                float volume;
+                bool found;
+                string name;
+
+                if (multipliers)
+                {
+                    name = "x" + (i + 1);
+                    found = settings.TryGetMultiplierSound(i + 1, out clip, out volume);
+                }
+                else
+                {
+                    SymbolEntry entry = settings.Symbols[i];
+                    name = entry != null ? entry.displayName : "?";
+                    clip = null;
+                    volume = 1f;
+                    found = entry != null && settings.TryGetWinSound(entry.id, out clip, out volume);
+                }
+
+                if (!found)
+                {
+                    Debug.Log("[ScatterSound] " + name + ": no sound assigned.", this);
+                    continue;
+                }
+
+                audioManager.PlayClip(clip, multipliers ? SfxChannel.Multiplier : SfxChannel.Symbol, volume);
+                Debug.Log("[ScatterSound] " + name + ": " + clip.name, this);
+                yield return new WaitForSeconds(Mathf.Min(clip.length, 2f) + 0.2f);
+            }
+        }
 
         private void UpdateWinHud()
         {

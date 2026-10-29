@@ -13,44 +13,48 @@ MonoBehaviour:
   m_Name: ScatterGameSettings
   m_EditorClassIdentifier: ScatterGame.Runtime::ScatterGame.Runtime.ScatterGameSettings
   symbols:
-  - id: 0
-    displayName: Ten
+  - displayName: Ten
+    id: 0
     category: 0
     sprite: {fileID: 9008882550996213686, guid: a2514d30cac3c8a429b4f944a5213f5f, type: 3}
     reelWeights: 1400000014000000140000001400000014000000
     payMilli: 01000000040000000a000000
     goldenOfSymbolId: -1
     wildCanSubstitute: 1
-    winSound: {fileID: 0}
-  - id: 1
-    displayName: Jack
+    winSound: {fileID: 8300000, guid: 4f355bb27da596e46839aacdeb48dfad, type: 3}
+    winSoundVolume: 1
+  - displayName: Jack
+    id: 1
     category: 0
     sprite: {fileID: 5720815287268048695, guid: a0a68c9686530c14ea246434e44c4e11, type: 3}
     reelWeights: 1200000012000000120000001200000012000000
     payMilli: 02000000050000000d000000
     goldenOfSymbolId: -1
     wildCanSubstitute: 1
-    winSound: {fileID: 0}
-  - id: 2
-    displayName: Queen
+    winSound: {fileID: 8300000, guid: 4f355bb27da596e46839aacdeb48dfad, type: 3}
+    winSoundVolume: 1
+  - displayName: Queen
+    id: 2
     category: 0
     sprite: {fileID: 2688537153958596411, guid: 9ea438085f64ef54293e3814b6b6d7eb, type: 3}
     reelWeights: 1000000010000000100000001000000010000000
     payMilli: 020000000700000012000000
     goldenOfSymbolId: -1
     wildCanSubstitute: 1
-    winSound: {fileID: 0}
-  - id: 3
-    displayName: King
+    winSound: {fileID: 8300000, guid: 41e5f3bc717d50b4c9e28faa0dc218b6, type: 3}
+    winSoundVolume: 1
+  - displayName: King
+    id: 3
     category: 0
     sprite: {fileID: 3764612149195752976, guid: 75f961ddd80ae3c47b6e84b7c17ad257, type: 3}
     reelWeights: 0e0000000e0000000e0000000e0000000e000000
     payMilli: 030000000a0000001a000000
     goldenOfSymbolId: -1
     wildCanSubstitute: 1
-    winSound: {fileID: 0}
-  - id: 4
-    displayName: Ace
+    winSound: {fileID: 8300000, guid: 8f767dba315961345b5702d455237414, type: 3}
+    winSoundVolume: 1
+  - displayName: Ace
+    id: 4
     category: 0
     sprite: {fileID: 6476145951519431804, guid: a21e3e70b7914a84c8d8b5fe495c9ee2, type: 3}
     reelWeights: 0c0000000c0000000c0000000c0000000c000000
@@ -58,8 +62,9 @@ MonoBehaviour:
     goldenOfSymbolId: -1
     wildCanSubstitute: 1
     winSound: {fileID: 0}
-  - id: 5
-    displayName: Wild
+    winSoundVolume: 1
+  - displayName: Wild
+    id: 5
     category: 1
     sprite: {fileID: -4620890628840318053, guid: c8dc3231fc60c6a4c97d6c457664870e, type: 3}
     reelWeights: 0000000002000000020000000200000000000000
@@ -67,8 +72,9 @@ MonoBehaviour:
     goldenOfSymbolId: -1
     wildCanSubstitute: 1
     winSound: {fileID: 0}
-  - id: 6
-    displayName: Scatter
+    winSoundVolume: 1
+  - displayName: Scatter
+    id: 6
     category: 2
     sprite: {fileID: 6814551806913980236, guid: 73b0e70efe19e4f47bbbee820afe1bad, type: 3}
     reelWeights: 0200000002000000020000000200000002000000
@@ -76,8 +82,9 @@ MonoBehaviour:
     goldenOfSymbolId: -1
     wildCanSubstitute: 1
     winSound: {fileID: 0}
-  - id: 7
-    displayName: Golden Ten
+    winSoundVolume: 1
+  - displayName: Golden Ten
+    id: 7
     category: 0
     sprite: {fileID: -4448616160065278194, guid: 9a861749def806f419e1c2ad0c0ba4a2, type: 3}
     reelWeights: 0000000001000000010000000100000000000000
@@ -85,8 +92,9 @@ MonoBehaviour:
     goldenOfSymbolId: 0
     wildCanSubstitute: 1
     winSound: {fileID: 0}
-  - id: 8
-    displayName: Golden Jack
+    winSoundVolume: 1
+  - displayName: Golden Jack
+    id: 8
     category: 0
     sprite: {fileID: 4644449864940893976, guid: eb38c9e33ec69964380ed088a2059011, type: 3}
     reelWeights: 0000000001000000010000000100000000000000
@@ -94,8 +102,9 @@ MonoBehaviour:
     goldenOfSymbolId: 1
     wildCanSubstitute: 1
     winSound: {fileID: 0}
-  - id: 9
-    displayName: Golden Queen
+    winSoundVolume: 1
+  - displayName: Golden Queen
+    id: 9
     category: 0
     sprite: {fileID: 4686848470541490369, guid: 61be480c7a2f8434c90c326f7e57029a, type: 3}
     reelWeights: 0000000001000000010000000100000000000000
@@ -103,8 +112,9 @@ MonoBehaviour:
     goldenOfSymbolId: 2
     wildCanSubstitute: 1
     winSound: {fileID: 0}
-  - id: 10
-    displayName: Golden King
+    winSoundVolume: 1
+  - displayName: Golden King
+    id: 10
     category: 0
     sprite: {fileID: 4257176374618859661, guid: 1a2007b2276cb19479a52d4b4fe23a9c, type: 3}
     reelWeights: 0000000001000000010000000100000000000000
@@ -112,8 +122,9 @@ MonoBehaviour:
     goldenOfSymbolId: 3
     wildCanSubstitute: 1
     winSound: {fileID: 0}
-  - id: 11
-    displayName: Golden Ace
+    winSoundVolume: 1
+  - displayName: Golden Ace
+    id: 11
     category: 0
     sprite: {fileID: -4316595858204405975, guid: c2e51f128c0c1294a82e919613664949, type: 3}
     reelWeights: 0000000001000000010000000100000000000000
@@ -121,10 +132,52 @@ MonoBehaviour:
     goldenOfSymbolId: 4
     wildCanSubstitute: 1
     winSound: {fileID: 0}
+    winSoundVolume: 1
   maxMultiplier: 10
   paidMultiplierLadder: 01000000020000000300000005000000070000000a000000
   freeSpinMultiplierLadder: 0200000004000000060000000a000000
   freeSpinMultiplierPersists: 0
+  multiplierSounds:
+  - label: Multiplier x1
+    multiplier: 1
+    clip: {fileID: 0}
+    volume: 1
+  - label: Multiplier x2
+    multiplier: 2
+    clip: {fileID: 0}
+    volume: 1
+  - label: Multiplier x3
+    multiplier: 3
+    clip: {fileID: 0}
+    volume: 1
+  - label: Multiplier x4
+    multiplier: 4
+    clip: {fileID: 0}
+    volume: 1
+  - label: Multiplier x5
+    multiplier: 5
+    clip: {fileID: 0}
+    volume: 1
+  - label: Multiplier x6
+    multiplier: 6
+    clip: {fileID: 0}
+    volume: 1
+  - label: Multiplier x7
+    multiplier: 7
+    clip: {fileID: 0}
+    volume: 1
+  - label: Multiplier x8
+    multiplier: 8
+    clip: {fileID: 0}
+    volume: 1
+  - label: Multiplier x9
+    multiplier: 9
+    clip: {fileID: 0}
+    volume: 1
+  - label: Multiplier x10
+    multiplier: 10
+    clip: {fileID: 8300000, guid: 67bd304f8996ef840b9ea196b2dbb457, type: 3}
+    volume: 1
   maxCascadesPerSpin: 50
   goldenTransformEnabled: 1
   minScattersForBonus: 3
@@ -132,5 +185,5 @@ MonoBehaviour:
   retriggerFreeSpins: 5
   maxTotalFreeSpinsPerRound: 30
   scatterPayMilli: 000000000000000000000000
-  betAmounts: 0a000000140000003200000064000000c8000000f4010000
+  betAmounts: 0100000003000000050000000a000000140000003200000064000000c8000000f4010000
   defaultBetIndex: 0

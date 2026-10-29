@@ -8,8 +8,9 @@ namespace ScatterGame.Runtime
     [Serializable]
     public class SymbolEntry
     {
-        public int id;
+        // First on purpose: the Inspector uses the first text field as the list label ("Jack", "Queen"...).
         public string displayName;
+        public int id;
         public SymbolCategory category;
         public Sprite sprite;
 
@@ -25,8 +26,21 @@ namespace ScatterGame.Runtime
         [Tooltip("Regular symbols only: may a Wild stand in for this symbol?")]
         public bool wildCanSubstitute = true;
 
-        [Tooltip("Optional sound for this symbol when it is part of a win.")]
+        [Tooltip("Optional. Played when this symbol is part of a win. For the Scatter: played when it triggers the bonus. For the Wild: played when a Wild takes part in a win.")]
         public AudioClip winSound;
+
+        [Range(0f, 1f)] public float winSoundVolume = 1f;
+    }
+
+    /// <summary>One sound per multiplier level. Fill the 'clip' of each row in the Inspector.</summary>
+    [Serializable]
+    public class MultiplierSoundEntry
+    {
+        // First on purpose: shown as the row label ("Multiplier x3").
+        public string label;
+        [Min(1)] public int multiplier = 1;
+        public AudioClip clip;
+        [Range(0f, 1f)] public float volume = 1f;
     }
 
     /// <summary>
@@ -45,6 +59,9 @@ namespace ScatterGame.Runtime
         [SerializeField] private int[] paidMultiplierLadder = { 1, 2, 3, 5, 7, 10 };
         [SerializeField] private int[] freeSpinMultiplierLadder = { 2, 4, 6, 10 };
         [SerializeField] private bool freeSpinMultiplierPersists = false;
+
+        [Header("Multiplier sounds (one row per level, x1 up to Max Multiplier)")]
+        [SerializeField] private List<MultiplierSoundEntry> multiplierSounds = CreateMultiplierEntries(10);
 
         [Header("Cascades")]
         [SerializeField] private int maxCascadesPerSpin = 50;
@@ -66,6 +83,7 @@ namespace ScatterGame.Runtime
         public IReadOnlyList<int> BetAmounts => betAmounts;
         public int DefaultBetIndex => Mathf.Clamp(defaultBetIndex, 0, Mathf.Max(0, betAmounts.Length - 1));
         public IReadOnlyList<SymbolEntry> Symbols => symbols;
+        public IReadOnlyList<MultiplierSoundEntry> MultiplierSounds => multiplierSounds;
 
         public SymbolEntry GetEntry(int id)
         {
@@ -75,6 +93,92 @@ namespace ScatterGame.Runtime
             }
             return null;
         }
+
+        // ---------- Sounds ----------
+
+        /// <summary>The win sound of a symbol. False (and no error) when the symbol has none.</summary>
+        public bool TryGetWinSound(int symbolId, out AudioClip clip, out float volume)
+        {
+            clip = null;
+            volume = 1f;
+
+            SymbolEntry entry = GetEntry(symbolId);
+            if (entry == null || entry.winSound == null) return false;
+
+            clip = entry.winSound;
+            volume = Mathf.Clamp01(entry.winSoundVolume);
+            return true;
+        }
+
+        /// <summary>The sound of one multiplier level. False (and no error) when that level has no sound or does not exist.</summary>
+        public bool TryGetMultiplierSound(int multiplier, out AudioClip clip, out float volume)
+        {
+            clip = null;
+            volume = 1f;
+            if (multiplierSounds == null) return false;
+
+            foreach (MultiplierSoundEntry entry in multiplierSounds)
+            {
+                if (entry == null || entry.multiplier != multiplier || entry.clip == null) continue;
+                clip = entry.clip;
+                volume = Mathf.Clamp01(entry.volume);
+                return true;
+            }
+            return false;
+        }
+
+        // Right-click the asset header (the three dots) to list what is still silent.
+        [ContextMenu("Check Sounds")]
+        private void CheckSounds()
+        {
+            List<string> missing = new List<string>();
+
+            foreach (SymbolEntry entry in symbols)
+            {
+                if (entry != null && entry.winSound == null) missing.Add(entry.displayName);
+            }
+
+            int top = Mathf.Max(1, maxMultiplier);
+            for (int m = 1; m <= top; m++)
+            {
+                if (!TryGetMultiplierSound(m, out _, out _)) missing.Add("x" + m);
+            }
+
+            Debug.Log(missing.Count == 0
+                ? "[ScatterGameSettings] Every symbol and multiplier level has a sound."
+                : "[ScatterGameSettings] No sound yet for: " + string.Join(", ", missing), this);
+        }
+
+        private static List<MultiplierSoundEntry> CreateMultiplierEntries(int top)
+        {
+            List<MultiplierSoundEntry> list = new List<MultiplierSoundEntry>();
+            for (int m = 1; m <= top; m++) list.Add(new MultiplierSoundEntry { label = "Multiplier x" + m, multiplier = m });
+            return list;
+        }
+
+        // Makes sure every level from x1 to Max Multiplier has a row. Rows are never deleted, so assignments are never lost.
+        private void EnsureMultiplierSoundEntries()
+        {
+            if (multiplierSounds == null) multiplierSounds = new List<MultiplierSoundEntry>();
+
+            int top = Mathf.Max(1, maxMultiplier);
+            for (int m = 1; m <= top; m++)
+            {
+                bool found = false;
+                foreach (MultiplierSoundEntry entry in multiplierSounds)
+                {
+                    if (entry != null && entry.multiplier == m) { found = true; break; }
+                }
+                if (!found) multiplierSounds.Add(new MultiplierSoundEntry { multiplier = m });
+            }
+
+            foreach (MultiplierSoundEntry entry in multiplierSounds)
+            {
+                if (entry != null) entry.label = "Multiplier x" + entry.multiplier;
+            }
+        }
+
+        // ---------- Engine config ----------
 
         public SlotConfig BuildSlotConfig()
         {
@@ -135,10 +239,22 @@ namespace ScatterGame.Runtime
             return problems;
         }
 
-        /// <summary>Fills the asset from a SlotConfig (used by the editor menu that creates the default asset).</summary>
+        /// <summary>
+        /// Fills the asset from a SlotConfig (used by the editor menu that creates the default asset).
+        /// Sprites and sounds already on a symbol with the same id are KEPT.
+        /// </summary>
         public void CopyFrom(SlotConfig config, int[] bets)
         {
             if (config == null) throw new ArgumentNullException(nameof(config));
+
+            Dictionary<int, SymbolEntry> previous = new Dictionary<int, SymbolEntry>();
+            if (symbols != null)
+            {
+                foreach (SymbolEntry old in symbols)
+                {
+                    if (old != null && !previous.ContainsKey(old.id)) previous.Add(old.id, old);
+                }
+            }
 
             maxMultiplier = config.MaxMultiplier;
             paidMultiplierLadder = Copy(config.PaidMultiplierLadder);
@@ -157,7 +273,7 @@ namespace ScatterGame.Runtime
             symbols = new List<SymbolEntry>();
             foreach (SymbolDefinition symbol in config.Symbols)
             {
-                symbols.Add(new SymbolEntry
+                SymbolEntry created = new SymbolEntry
                 {
                     id = symbol.Id,
                     displayName = symbol.Name,
@@ -166,12 +282,25 @@ namespace ScatterGame.Runtime
                     payMilli = Copy(symbol.PayMilli),
                     goldenOfSymbolId = symbol.GoldenOfSymbolId,
                     wildCanSubstitute = symbol.WildCanSubstitute
-                });
+                };
+
+                if (previous.TryGetValue(symbol.Id, out SymbolEntry kept))
+                {
+                    created.sprite = kept.sprite;
+                    created.winSound = kept.winSound;
+                    created.winSoundVolume = kept.winSoundVolume;
+                }
+
+                symbols.Add(created);
             }
+
+            EnsureMultiplierSoundEntries();
         }
 
         private void OnValidate()
         {
+            EnsureMultiplierSoundEntries();
+
             // Keep the Inspector arrays the right length so a typo cannot break the engine.
             foreach (SymbolEntry entry in symbols)
             {

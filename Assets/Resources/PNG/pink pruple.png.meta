@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 9492096a3bd8f2f4c852243ac02a9b6e
+guid: 302412609841e5e46b0ff3a7e2b3a09c
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -2150391925166808807
-    second: Casino_0
+      213: 1058917640442011200
+    second: pink pruple_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,13 +126,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Casino_0
+      name: pink pruple_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 299
-        height: 299
+        width: 1090
+        height: 255
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +141,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 9116094ffe54822e0800000000000000
-      internalID: -2150391925166808807
+      spriteID: 04ed0fccbf702be00800000000000000
+      internalID: 1058917640442011200
       vertices: []
       indices: 
       edges: []
@@ -161,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Casino_0: -2150391925166808807
+      pink pruple_0: 1058917640442011200
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

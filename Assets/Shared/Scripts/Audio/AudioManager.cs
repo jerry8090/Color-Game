@@ -35,6 +35,13 @@ namespace Shared.Audio
         Machine      // rack movement: its own voice
     }
 
+        /// <summary>Dedicated voices for sounds that are not in the SfxType list (Scatter symbol wins and multipliers).</summary>
+    public enum SfxChannel
+    {
+        Symbol,
+        Multiplier
+    }
+
     /// <summary>One sound effect: which type, which clip, how loud.</summary>
     [Serializable]
     public class SfxEntry
@@ -85,6 +92,9 @@ namespace Shared.Audio
 
         [Header("Music (optional)")]
         [SerializeField] private AudioClip musicClip;
+        [Header("Scatter game: symbol and multiplier sounds (multiplied with the master SFX volume and mute)")]
+        [Range(0f, 1f)] [SerializeField] private float symbolWinVolume = 1f;
+        [Range(0f, 1f)] [SerializeField] private float multiplierVolume = 1f;
 
         /// <summary>Raised when volume or on/off settings change (the sound button listens to this).</summary>
         public event Action OnSettingsChanged;
@@ -97,6 +107,8 @@ namespace Shared.Audio
         private AudioSource[] physicsPool;
         private AudioSource countdownSource;
         private AudioSource machineSource;
+        private AudioSource symbolSource;
+        private AudioSource multiplierSource;
         private bool isReady;
 
         // Always read the settings fresh: SaveManager replaces the object when the game is reset.
@@ -165,6 +177,8 @@ namespace Shared.Audio
             for (int i = 0; i < physicsPool.Length; i++) physicsPool[i] = CreateVoice("PhysicsVoice" + i);
             countdownSource = CreateVoice("CountdownVoice");
             machineSource = CreateVoice("MachineVoice");
+            symbolSource = CreateVoice("SymbolWinVoice");
+            multiplierSource = CreateVoice("MultiplierVoice");
 
             isReady = true;
         }
@@ -228,9 +242,28 @@ namespace Shared.Audio
 
         /// <summary>Stops the rack / machine sounds immediately.</summary>
         public void StopMachineSounds()
-        {
+        { 
+            
             if (machineSource != null) machineSource.Stop();
         }
+
+                /// <summary>
+        /// Plays any clip on a dedicated voice (Scatter symbol win sounds and multiplier sounds).
+        /// Obeys the saved master SFX volume and mute. A missing clip is ignored.
+        /// Symbol and multiplier sounds use separate voices, so a symbol sound never cuts off a multiplier sound.
+        /// </summary>
+        public void PlayClip(AudioClip clip, SfxChannel channel, float clipVolume = 1f)
+        {
+            if (clip == null || !isReady || !Settings.sfxEnabled) return;
+
+            float groupVolume = channel == SfxChannel.Multiplier ? multiplierVolume : symbolWinVolume;
+            float volume = Mathf.Clamp01(clipVolume * groupVolume * Settings.sfxVolume);
+            if (volume < 0.003f) return;
+
+            AudioSource source = channel == SfxChannel.Multiplier ? multiplierSource : symbolSource;
+            if (source != null) source.PlayOneShot(clip, volume);
+        }
+
 
         private void Play(SfxType type, float strength, float pitchRandom)
         {
@@ -362,7 +395,10 @@ namespace Shared.Audio
                 }
             }
             StopCountdownSounds();
+            if (symbolSource != null) symbolSource.Stop();
+            if (multiplierSource != null) multiplierSource.Stop();
             StopMachineSounds();
+            
         }
 
         // ---------- Settings ----------
