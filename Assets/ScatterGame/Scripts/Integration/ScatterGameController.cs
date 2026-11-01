@@ -50,6 +50,10 @@ namespace ScatterGame.Integration
         [SerializeField] private Button homeButton;
         [SerializeField] private TMP_Text spinLabel;
         
+        [Header("Spin Button Images")]
+        [SerializeField] private Image spinButtonImage;
+        [SerializeField] private Sprite spinSprite;
+        [SerializeField] private Sprite skipSprite;
 
         [Header("Auto Button Images")]
         [SerializeField] private Image autoButtonImage;
@@ -187,7 +191,10 @@ namespace ScatterGame.Integration
             betDownButton.interactable = !isBusy && betIndex > 0;
             betUpButton.interactable = !isBusy && betIndex < settings.BetAmounts.Count - 1;
             if (historyUI != null) historyUI.SetOpenEnabled(!isBusy);
-            if (spinLabel != null) spinLabel.text = isBusy ? (speed > 1f ? "..." : "SKIP") : "SPIN";
+            if (spinButtonImage != null)
+            {
+              spinButtonImage.sprite = isBusy ? skipSprite : spinSprite;
+            }
 
             if (autoOn && !isBusy && (historyUI == null || !historyUI.IsOpen))
             {

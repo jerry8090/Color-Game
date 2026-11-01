@@ -7991,6 +7991,7 @@ GameObject:
   - component: {fileID: 1445576653}
   - component: {fileID: 1445576655}
   - component: {fileID: 1445576656}
+  - component: {fileID: 1445576657}
   m_Layer: 0
   m_Name: SpinButton
   m_TagString: Untagged
@@ -8075,7 +8076,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 3
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -8115,6 +8116,28 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0.16704556, b: 0.9528302, a: 0.13333334}
   m_EffectDistance: {x: 9.14, y: 6.45}
   m_UseGraphicAlpha: 1
+--- !u!95 &1445576657
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1445576651}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: a0ffe5c77014c934ca54cc66225f64c7, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &1450471311
 GameObject:
   m_ObjectHideFlags: 0
@@ -9359,6 +9382,9 @@ MonoBehaviour:
   autoButton: {fileID: 770265127}
   homeButton: {fileID: 68559427}
   spinLabel: {fileID: 2073270211}
+  spinButtonImage: {fileID: 1445576653}
+  spinSprite: {fileID: 8451113501370137307, guid: 8ca38b9c0c860364fb6729b0d941600e, type: 3}
+  skipSprite: {fileID: 7941067700184411139, guid: c7f5e9e0989e8e046bc71badb38deac0, type: 3}
   autoButtonImage: {fileID: 1599053319}
   autoOnSprite: {fileID: 4007226586274773808, guid: 1ebfb36ac195cac418bd757651adc88d, type: 3}
   autoOffSprite: {fileID: -9222504839258629699, guid: 621d5ee956173004999f8bb18e300aad, type: 3}
