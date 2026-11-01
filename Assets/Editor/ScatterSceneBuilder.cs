@@ -246,6 +246,7 @@ public static class ScatterSceneBuilder
         
 
         // ---- Components ----
+        ScatterWinOverlay winOverlay = ScatterWinOverlayInstaller.CreateOverlay(safe, rounded);
         GameObject logic = new GameObject("ScatterGame");
 
         ScatterHUD hud = logic.AddComponent<ScatterHUD>();
@@ -274,6 +275,7 @@ public static class ScatterSceneBuilder
         SetRef(controller, "homeButton", homeButton);
         SetRef(controller, "spinLabel", spinLabel);
         SetRef(controller, "autoLabel", autoLabel);
+        SetRef(controller, "winOverlay", winOverlay);
 
         EditorSceneManager.SaveScene(scene, ScenePath);
 

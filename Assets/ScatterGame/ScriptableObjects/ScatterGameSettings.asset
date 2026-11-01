@@ -17,18 +17,18 @@ MonoBehaviour:
     id: 0
     category: 0
     sprite: {fileID: 9008882550996213686, guid: a2514d30cac3c8a429b4f944a5213f5f, type: 3}
-    reelWeights: 1400000014000000140000001400000014000000
-    payMilli: 01000000040000000a000000
+    reelWeights: 1e0000001e0000001e0000001e0000001e000000
+    payMilli: 32000000040000000a000000
     goldenOfSymbolId: -1
     wildCanSubstitute: 1
-    winSound: {fileID: 8300000, guid: 4f355bb27da596e46839aacdeb48dfad, type: 3}
+    winSound: {fileID: 0}
     winSoundVolume: 1
   - displayName: Jack
     id: 1
     category: 0
     sprite: {fileID: 5720815287268048695, guid: a0a68c9686530c14ea246434e44c4e11, type: 3}
     reelWeights: 1200000012000000120000001200000012000000
-    payMilli: 02000000050000000d000000
+    payMilli: 64000000050000000d000000
     goldenOfSymbolId: -1
     wildCanSubstitute: 1
     winSound: {fileID: 8300000, guid: 4f355bb27da596e46839aacdeb48dfad, type: 3}
@@ -38,7 +38,7 @@ MonoBehaviour:
     category: 0
     sprite: {fileID: 2688537153958596411, guid: 9ea438085f64ef54293e3814b6b6d7eb, type: 3}
     reelWeights: 1000000010000000100000001000000010000000
-    payMilli: 020000000700000012000000
+    payMilli: 960000000700000012000000
     goldenOfSymbolId: -1
     wildCanSubstitute: 1
     winSound: {fileID: 8300000, guid: 41e5f3bc717d50b4c9e28faa0dc218b6, type: 3}
@@ -47,8 +47,8 @@ MonoBehaviour:
     id: 3
     category: 0
     sprite: {fileID: 3764612149195752976, guid: 75f961ddd80ae3c47b6e84b7c17ad257, type: 3}
-    reelWeights: 0e0000000e0000000e0000000e0000000e000000
-    payMilli: 030000000a0000001a000000
+    reelWeights: 1400000014000000140000001400000014000000
+    payMilli: c80000000a0000001a000000
     goldenOfSymbolId: -1
     wildCanSubstitute: 1
     winSound: {fileID: 8300000, guid: 8f767dba315961345b5702d455237414, type: 3}
@@ -58,10 +58,10 @@ MonoBehaviour:
     category: 0
     sprite: {fileID: 6476145951519431804, guid: a21e3e70b7914a84c8d8b5fe495c9ee2, type: 3}
     reelWeights: 0c0000000c0000000c0000000c0000000c000000
-    payMilli: 040000001000000027000000
+    payMilli: 5e0100001000000027000000
     goldenOfSymbolId: -1
     wildCanSubstitute: 1
-    winSound: {fileID: 0}
+    winSound: {fileID: 8300000, guid: cfea58114ca55be4684fb401e7e84e5a, type: 3}
     winSoundVolume: 1
   - displayName: Wild
     id: 5
@@ -71,17 +71,17 @@ MonoBehaviour:
     payMilli: 000000000000000000000000
     goldenOfSymbolId: -1
     wildCanSubstitute: 1
-    winSound: {fileID: 0}
+    winSound: {fileID: 8300000, guid: 9957fbe7d045d1345b503c2fee44097f, type: 3}
     winSoundVolume: 1
   - displayName: Scatter
     id: 6
     category: 2
     sprite: {fileID: 6814551806913980236, guid: 73b0e70efe19e4f47bbbee820afe1bad, type: 3}
-    reelWeights: 0200000002000000020000000200000002000000
+    reelWeights: 0300000003000000030000000300000003000000
     payMilli: 000000000000000000000000
     goldenOfSymbolId: -1
     wildCanSubstitute: 1
-    winSound: {fileID: 0}
+    winSound: {fileID: 8300000, guid: 066fd50a1e2c1c743bd56b6fbb55c390, type: 3}
     winSoundVolume: 1
   - displayName: Golden Ten
     id: 7
@@ -127,14 +127,14 @@ MonoBehaviour:
     id: 11
     category: 0
     sprite: {fileID: -4316595858204405975, guid: c2e51f128c0c1294a82e919613664949, type: 3}
-    reelWeights: 0000000001000000010000000100000000000000
-    payMilli: 000000000000000000000000
+    reelWeights: 1400000001000000010000000100000014000000
+    payMilli: 050000000a0000000f000000
     goldenOfSymbolId: 4
     wildCanSubstitute: 1
     winSound: {fileID: 0}
     winSoundVolume: 1
   maxMultiplier: 10
-  paidMultiplierLadder: 01000000020000000300000005000000070000000a000000
+  paidMultiplierLadder: 0100000002000000030000000400000005000000060000000700000008000000090000000a000000
   freeSpinMultiplierLadder: 0200000004000000060000000a000000
   freeSpinMultiplierPersists: 0
   multiplierSounds:
@@ -144,35 +144,35 @@ MonoBehaviour:
     volume: 1
   - label: Multiplier x2
     multiplier: 2
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: f46deb691eacd0948a1f3a295360b52a, type: 3}
     volume: 1
   - label: Multiplier x3
     multiplier: 3
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 7f624ae59b0416944bcf5c492f09ed7e, type: 3}
     volume: 1
   - label: Multiplier x4
     multiplier: 4
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 528dd0acc4edc264cb7498f8b6daf6a8, type: 3}
     volume: 1
   - label: Multiplier x5
     multiplier: 5
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: fd399a971b970f74f830b8c3d5c6931d, type: 3}
     volume: 1
   - label: Multiplier x6
     multiplier: 6
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 222c61491735d564292d1d700cd6bbd0, type: 3}
     volume: 1
   - label: Multiplier x7
     multiplier: 7
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: a1cd09de5ab70a845868e4a7cf152060, type: 3}
     volume: 1
   - label: Multiplier x8
     multiplier: 8
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 95c5d53eb33ca21429dc68e63ac64869, type: 3}
     volume: 1
   - label: Multiplier x9
     multiplier: 9
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 419886528178c2a4698622f841dc632a, type: 3}
     volume: 1
   - label: Multiplier x10
     multiplier: 10

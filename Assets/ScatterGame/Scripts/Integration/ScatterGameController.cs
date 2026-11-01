@@ -49,7 +49,12 @@ namespace ScatterGame.Integration
         [SerializeField] private Button autoButton;
         [SerializeField] private Button homeButton;
         [SerializeField] private TMP_Text spinLabel;
-        [SerializeField] private TMP_Text autoLabel;
+        
+
+        [Header("Auto Button Images")]
+        [SerializeField] private Image autoButtonImage;
+        [SerializeField] private Sprite autoOnSprite;
+        [SerializeField] private Sprite autoOffSprite;
 
         [Header("Tuning")]
         [SerializeField] private string mainMenuSceneName = "MainMenu";
@@ -70,6 +75,12 @@ namespace ScatterGame.Integration
         [Tooltip("Development only: logs every symbol and multiplier sound that plays.")]
         [SerializeField] private bool logSounds = false;
 
+                [Header("Win display")]
+        [Tooltip("Optional. The floating win overlay. Leave empty to play without it.")]
+        [SerializeField] private ScatterWinOverlay winOverlay;
+        [Tooltip("Development only: logs every win amount, its multiplier and the running totals.")]
+        [SerializeField] private bool logWins = false;
+
         public ScatterUiState State { get; private set; } = ScatterUiState.Idle;
 
         private ScatterGameSettings settings;
@@ -84,6 +95,8 @@ namespace ScatterGame.Integration
         private float speed = 1f;
         private long balanceBase;
         private long runningMilli;
+        private readonly SpinWinLedger ledger = new SpinWinLedger();
+        private long currentBet;
 
         private int scatterId = -1;
         private readonly MultiplierSoundTracker multiplierTracker = new MultiplierSoundTracker();
@@ -230,11 +243,19 @@ namespace ScatterGame.Integration
         }
 
         private void SetAuto(bool on)
-        {
-            autoOn = on;
-            autoTimer = 0f;
-            if (autoLabel != null) autoLabel.text = on ? "ON" : "AUTO";
-        }
+{
+    autoOn = on;
+    autoTimer = 0f;
+
+    // Update the Auto button image.
+    if (autoButtonImage != null)
+    {
+        autoButtonImage.sprite = autoOn ? autoOnSprite : autoOffSprite;
+    }
+
+    // Keep the old text behavior if a label is still assigned.
+    
+}
 
         private void GoHome()
         {
@@ -278,18 +299,23 @@ namespace ScatterGame.Integration
             RoundResult round = result.Round;
             balanceBase = result.BalanceBefore - result.Bet;
             runningMilli = 0;
+            currentBet = bet;
+            ledger.BeginRound();
+            if (winOverlay != null) winOverlay.ResetForNewRound();
+
 
             hud.SetBalance(balanceBase, false);
             hud.SetWin(0, true);
             hud.HideFreeSpins();
 
-            yield return PlaySpin(round.PaidSpin, false, true);
+            yield return PlaySpin(round.PaidSpin, false, true, 0);
 
             if (round.BonusTriggered) yield return PlayBonus(round);
 
             State = ScatterUiState.Settling;
             hud.SetWin(result.CreditsPaid, false);
             hud.SetBalance(walletManager.GetBalance(), false);
+            if (winOverlay != null) winOverlay.Finish(result.CreditsPaid);
 
             if (result.CreditsPaid > 0)
             {
@@ -313,9 +339,11 @@ namespace ScatterGame.Integration
             if (stopAuto) SetAuto(false);
         }
 
-               // One spin: reels, then every cascade. Used for the paid spin and for every free spin.
-        private IEnumerator PlaySpin(SpinResult spin, bool isFree, bool resetMultiplier)
+                       // One spin: reels, then every cascade. Used for the paid spin (0) and for every free spin (1, 2, ...).
+        private IEnumerator PlaySpin(SpinResult spin, bool isFree, bool resetMultiplier, int spinNumber)
         {
+            ledger.BeginSpin(spinNumber, isFree);
+
             if (resetMultiplier)
             {
                 int[] ladder = isFree ? config.FreeSpinMultiplierLadder : config.PaidMultiplierLadder;
@@ -337,6 +365,7 @@ namespace ScatterGame.Integration
             {
                 runningMilli += spin.ScatterWinMilli;
                 UpdateWinHud();
+                PresentWins(ledger.AddScatterPay(scatterId, spin.ScatterWinMilli), 1);
             }
 
             State = isFree ? ScatterUiState.FreeSpins : ScatterUiState.Cascading;
@@ -357,6 +386,7 @@ namespace ScatterGame.Integration
 
                 runningMilli += step.WinMilli;
                 UpdateWinHud();
+                PresentWins(ledger.AddCascade(step, currentBet), step.Multiplier);
                 PlaySfx(SfxType.SlotStop);
 
                 yield return grid.Cascade(step, wildId);
@@ -378,7 +408,7 @@ namespace ScatterGame.Integration
                 hud.SetFreeSpins(i + 1, total);
 
                 bool resetMultiplier = !config.FreeSpinMultiplierPersists || i == 0;
-                yield return PlaySpin(spin, true, resetMultiplier);
+                yield return PlaySpin(spin, true, resetMultiplier, i + 1);
 
                 if (spin.ScatterCount >= config.MinScattersForBonus)
                 {
@@ -397,6 +427,36 @@ namespace ScatterGame.Integration
         }
 
         // ---------- Helpers ----------
+
+
+                // ---------- Win overlay ----------
+
+        // Called once per confirmed win, with the entries the ledger just recorded. An empty list means a duplicate: nothing happens.
+        private void PresentWins(List<WinEntry> added, int multiplier)
+        {
+            if (added == null || added.Count == 0) return;
+
+            long latest = ledger.LastCascadeMilli;
+            if (logWins)
+            {
+                Debug.Log("[ScatterWin] spin " + ledger.SpinNumber + (ledger.IsFreeSpin ? " (free)" : " (paid)") +
+                          ": " + ScatterWinFormat.Signed(latest) + " at x" + multiplier +
+                          " | spin total " + ScatterWinFormat.Credits(ledger.SpinTotalMilli) +
+                          " | round total " + ScatterWinFormat.Credits(ledger.RoundTotalMilli), this);
+            }
+
+            if (winOverlay == null) return;
+
+            string header = ledger.IsFreeSpin ? "TOTAL WIN   |   FREE SPIN " + ledger.SpinNumber : "TOTAL WIN";
+            winOverlay.ShowWin(header, latest, multiplier, ledger.RoundTotalMilli,
+                               ScatterWinFormat.BuildComboText(added, SymbolName, 3));
+        }
+
+        private string SymbolName(int symbolId)
+        {
+            SymbolEntry entry = settings.GetEntry(symbolId);
+            return entry != null && !string.IsNullOrEmpty(entry.displayName) ? entry.displayName.ToUpperInvariant() : symbolId.ToString();
+        }
 
         // ---------- Symbol and multiplier sounds ----------
 
@@ -508,6 +568,7 @@ namespace ScatterGame.Integration
             speed = value;
             grid.Speed = value;
             hud.Speed = value;
+            if (winOverlay != null) winOverlay.Speed = value;
         }
 
         private void HandleBalanceChanged(long balance)
