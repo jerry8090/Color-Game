@@ -3165,6 +3165,7 @@ GameObject:
   - component: {fileID: 647923155}
   - component: {fileID: 647923154}
   - component: {fileID: 647923153}
+  - component: {fileID: 647923157}
   m_Layer: 0
   m_Name: SoundButton
   m_TagString: Untagged
@@ -3206,7 +3207,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ColorGame.UI.AudioToggleUI
   audioManager: {fileID: 1739999678}
   button: {fileID: 647923154}
-  soundImage: {fileID: 647923155}
+  label: {fileID: 522091118}
+  buttonImage: {fileID: 647923155}
   soundOnSprite: {fileID: -5310212949441411226, guid: 4ff463ece88ed6f41bbb90d24c829468, type: 3}
   soundOffSprite: {fileID: -2805692500329987794, guid: 854c9c40cbcd4b24495f4aa0388744fa, type: 3}
 --- !u!114 &647923154
@@ -3228,7 +3230,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 3
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -3291,6 +3293,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 647923151}
   m_CullTransparentMesh: 1
+--- !u!95 &647923157
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 647923151}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 4cccf72eee98703478e6b55fe5222234, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &648924262
 GameObject:
   m_ObjectHideFlags: 0
@@ -3913,6 +3937,7 @@ GameObject:
   - component: {fileID: 770265124}
   - component: {fileID: 770265126}
   - component: {fileID: 770265127}
+  - component: {fileID: 770265128}
   m_Layer: 0
   m_Name: AutoButton
   m_TagString: Untagged
@@ -3967,7 +3992,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 0
+  m_Transition: 3
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -3992,6 +4017,28 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!95 &770265128
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 770265123}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: debbc7272f265984ab08080f551a2679, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &772627461
 GameObject:
   m_ObjectHideFlags: 0

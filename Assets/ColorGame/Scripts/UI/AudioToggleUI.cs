@@ -1,4 +1,5 @@
 
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Shared.Audio;
@@ -6,45 +7,56 @@ using Shared.Audio;
 namespace ColorGame.UI
 {
     /// <summary>
-    /// One button that turns all sound (music + effects) on or off.
-    /// Uses sprites instead of TMP text.
+    /// Shared audio toggle for Color Game (Text)
+    /// and Scatter Game (Sprites).
     /// </summary>
     public class AudioToggleUI : MonoBehaviour
     {
+        [Header("Audio")]
         [SerializeField] private AudioManager audioManager;
         [SerializeField] private Button button;
 
-        [Header("Sprite Settings")]
-        [SerializeField] private Image soundImage;
+        [Header("Text Display - Color Game")]
+        [SerializeField] private TMP_Text label;
+
+        [Header("Sprite Display - Scatter Game")]
+        [SerializeField] private Image buttonImage;
         [SerializeField] private Sprite soundOnSprite;
         [SerializeField] private Sprite soundOffSprite;
 
-        private bool isReady;
-
         private void Awake()
         {
-            if (audioManager == null ||
-                button == null ||
-                soundImage == null ||
-                soundOnSprite == null ||
-                soundOffSprite == null)
+            if (audioManager == null || button == null)
             {
                 Debug.LogError(
-                    "[AudioToggleUI] A reference is missing in the Inspector.",
-                    this
-                );
+                    "[AudioToggleUI] AudioManager or Button is missing.", this);
+                enabled = false;
                 return;
             }
 
-            button.onClick.RemoveListener(HandleClicked);
-            button.onClick.AddListener(HandleClicked);
+            if (label == null && buttonImage == null)
+            {
+                Debug.LogError(
+                    "[AudioToggleUI] Assign either a TMP label or Button Image.", this);
+                enabled = false;
+                return;
+            }
 
-            isReady = true;
+            if (buttonImage != null &&
+                (soundOnSprite == null || soundOffSprite == null))
+            {
+                Debug.LogError(
+                    "[AudioToggleUI] Sound ON/OFF sprites are missing.", this);
+                enabled = false;
+                return;
+            }
+
+            button.onClick.AddListener(HandleClicked);
         }
 
         private void OnEnable()
         {
-            if (!isReady) return;
+            if (audioManager == null) return;
 
             audioManager.OnSettingsChanged += Refresh;
             Refresh();
@@ -56,22 +68,40 @@ namespace ColorGame.UI
                 audioManager.OnSettingsChanged -= Refresh;
         }
 
+        private void OnDestroy()
+        {
+            if (button != null)
+                button.onClick.RemoveListener(HandleClicked);
+        }
+
         private void HandleClicked()
         {
             bool turnOn = !audioManager.IsSoundOn;
 
             audioManager.SetSoundOn(turnOn);
 
-            // Play click sound only when sound is turned ON.
+            // Play confirmation only when sound is turned ON.
             if (turnOn)
                 audioManager.PlaySfx(SfxType.ButtonClick);
         }
 
         private void Refresh()
         {
-            soundImage.sprite = audioManager.IsSoundOn
-                ? soundOnSprite
-                : soundOffSprite;
+            bool soundOn = audioManager.IsSoundOn;
+
+            // Color Game: Text display
+            if (label != null)
+            {
+                label.text = soundOn ? "SOUND: ON" : "SOUND: OFF";
+            }
+
+            // Scatter Game: Sprite display
+            if (buttonImage != null)
+            {
+                buttonImage.sprite = soundOn
+                    ? soundOnSprite
+                    : soundOffSprite;
+            }
         }
     }
 }
