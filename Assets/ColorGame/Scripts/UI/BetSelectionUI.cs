@@ -9,8 +9,8 @@ using ColorGame.Gameplay;
 namespace ColorGame.UI
 {
     /// <summary>
-    /// Creates the bet buttons from the config, dims the ones the player cannot afford,
-    /// and shows the selected bet. Clicks are forwarded to BetManager.
+    /// Creates the chip (bet amount) buttons. The selected chip stays selected while you tap colors.
+    /// Buttons dim when the credits still free (balance minus the bets on the table) are too low for that chip.
     /// </summary>
     public class BetSelectionUI : MonoBehaviour
     {
@@ -18,6 +18,8 @@ namespace ColorGame.UI
         [SerializeField] private BetManager betManager;
         [SerializeField] private VirtualWalletManager walletManager;
         [SerializeField] private ColorGameManager gameManager;
+        [Tooltip("The bets on the table (shows TOTAL and LEFT).")]
+        [SerializeField] private BetSlip betSlip;
         [SerializeField] private BetButtonView buttonPrefab;
         [SerializeField] private Transform buttonContainer;
         [SerializeField] private TMP_Text selectedBetLabel;
@@ -34,6 +36,10 @@ namespace ColorGame.UI
                 return;
             }
 
+            selectedBetLabel.enableAutoSizing = true;
+            selectedBetLabel.fontSizeMin = 16f;
+            selectedBetLabel.fontSizeMax = 40f;
+
             BuildButtons();
             isReady = views.Count > 0;
         }
@@ -45,6 +51,7 @@ namespace ColorGame.UI
             betManager.OnBetChanged += HandleBetChanged;
             walletManager.OnBalanceChanged += HandleBalanceChanged;
             gameManager.OnStateChanged += HandleStateChanged;
+            if (betSlip != null) betSlip.OnTotalChanged += HandleTotalChanged;
             Refresh();
         }
 
@@ -53,6 +60,7 @@ namespace ColorGame.UI
             if (betManager != null) betManager.OnBetChanged -= HandleBetChanged;
             if (walletManager != null) walletManager.OnBalanceChanged -= HandleBalanceChanged;
             if (gameManager != null) gameManager.OnStateChanged -= HandleStateChanged;
+            if (betSlip != null) betSlip.OnTotalChanged -= HandleTotalChanged;
         }
 
         private void BuildButtons()
@@ -75,28 +83,32 @@ namespace ColorGame.UI
 
         private void HandleBetClicked(int amount)
         {
-            betManager.TrySelectBet(amount); // shows a toast by itself if the bet is rejected
+            betManager.TrySelectBet(amount); // shows a toast by itself if the amount is rejected
         }
 
         private void HandleBetChanged(int bet) { Refresh(); }
         private void HandleBalanceChanged(long balance) { Refresh(); }
         private void HandleStateChanged(GameState state) { Refresh(); }
+        private void HandleTotalChanged(int total) { Refresh(); }
 
         private void Refresh()
         {
             bool canInteract = gameManager.State == GameState.Idle;
+            long onTable = betSlip != null ? betSlip.TotalBet : 0;
+            long free = walletManager.GetBalance() - onTable;
 
             foreach (BetButtonView view in views)
             {
                 bool isSelected = betManager.HasBet && view.Amount == betManager.SelectedBet;
                 view.SetSelected(isSelected);
-                view.SetAffordable(walletManager.CanAfford(view.Amount));
+                view.SetAffordable(free >= view.Amount);
                 view.SetInteractable(canInteract);
             }
 
-            selectedBetLabel.text = betManager.HasBet
-                ? "BET: " + betManager.SelectedBet.ToString("N0", CultureInfo.InvariantCulture)
-                : "BET: NONE";
+            string chip = betManager.HasBet ? betManager.SelectedBet.ToString("N0", CultureInfo.InvariantCulture) : "NONE";
+            selectedBetLabel.text = betSlip == null
+                ? "BET: " + chip
+                : $"CHIP: {chip}\nTOTAL: {onTable.ToString("N0", CultureInfo.InvariantCulture)}   LEFT: {free.ToString("N0", CultureInfo.InvariantCulture)}";
         }
     }
 }

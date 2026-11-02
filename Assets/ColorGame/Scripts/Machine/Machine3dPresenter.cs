@@ -19,7 +19,7 @@ namespace ColorGame.Machine
     /// After the round (OnRoundCompleted or OnRoundVoided) the cubes return to the shelf and the rack lowers.
     /// It never decides a win and never touches the wallet.
     /// </summary>
-    public class Machine3DPresenter : MonoBehaviour, IPhysicalRollPresenter
+    public class Machine3DPresenter : MonoBehaviour, IPhysicalRollPresenter ,IForceableRollPresenter
     {
         private static readonly Vector3[] FaceNormals =
         {
@@ -240,6 +240,7 @@ namespace ColorGame.Machine
                 if (emitter != null) emitter.OnImpact -= HandleImpact;
             }
             SetSoundsActive(false);
+            forcedColors = null;
 
             // Coroutines stop on their own. Put the machine back into a clean ready state.
             isRolling = false;
@@ -482,6 +483,82 @@ namespace ColorGame.Machine
 
             return true;
         }
+
+
+        // ---------- DEV TEST: forced result ----------
+
+        private GameColor[] forcedColors;
+
+        public void SetForcedResult(GameColor[] colors)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            forcedColors = colors != null && colors.Length == Count ? (GameColor[])colors.Clone() : null;
+#endif
+        }
+
+        // After the cubes have really settled, turns each one so the forced color is on top.
+        // Used once per request, then cleared, so nothing can repeat or override it.
+        private IEnumerator ApplyForcedResult()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (forcedColors == null || lastRunTimedOut) yield break;
+
+            GameColor[] target = forcedColors;
+            forcedColors = null;
+
+            Quaternion[] from = new Quaternion[Count];
+            Quaternion[] to = new Quaternion[Count];
+
+            for (int i = 0; i < Count; i++)
+            {
+                from[i] = cubes[i].Body.rotation;
+                to[i] = from[i];
+
+                // Of the faces with the wanted color, take the one nearest to the top (smallest turn).
+                int bestFace = -1;
+                float bestUp = float.MinValue;
+                for (int f = 0; f < FaceNormals.Length; f++)
+                {
+                    if (cubes[i].GetFaceColor(f) != target[i]) continue;
+                    float up = (from[i] * FaceNormals[f]).y;
+                    if (up > bestUp) { bestUp = up; bestFace = f; }
+                }
+
+                if (bestFace < 0)
+                {
+                    Debug.LogError($"[Machine3DPresenter] Cube {i + 1} has no {target[i]} face. Forced result skipped for it.", this);
+                    continue;
+                }
+
+                to[i] = Quaternion.FromToRotation(from[i] * FaceNormals[bestFace], Vector3.up) * from[i];
+            }
+
+            float t = 0f;
+            while (t < 1f)
+            {
+                t += Time.deltaTime / 0.25f;
+                float e = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t));
+                for (int i = 0; i < Count; i++) cubes[i].transform.rotation = Quaternion.Slerp(from[i], to[i], e);
+                yield return null;
+            }
+
+            for (int i = 0; i < Count; i++)
+            {
+                Rigidbody rb = cubes[i].Body;
+                rb.rotation = to[i];
+                cubes[i].transform.rotation = to[i];
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+            Physics.SyncTransforms();
+
+            Debug.LogWarning("[Machine3DPresenter] DEV TEST: the cubes were turned to show the forced result.", this);
+#else
+            yield break;
+#endif
+        }
+
+
 
         // ---------- Highlight (display only) ----------
 
@@ -763,6 +840,7 @@ namespace ColorGame.Machine
         {
             yield return PlayPhysicalRoll(colors =>
                 Debug.Log("[Machine3DPresenter] TEST cubes show: " + string.Join(" / ", colors)));
+            yield return ApplyForcedResult();    
 
             yield return new WaitForSeconds(1.5f);
             if (!isResetting && !isRolling) StartCoroutine(ResetRoutine());

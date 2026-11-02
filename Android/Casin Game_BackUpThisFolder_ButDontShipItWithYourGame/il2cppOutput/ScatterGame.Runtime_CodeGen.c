@@ -1,0 +1,129 @@
+﻿#include "pch-c.h"
+
+
+#include "codegen/il2cpp-codegen-metadata.h"
+
+
+
+
+
+extern void SymbolEntry__ctor_m52D149F1EED4372E2768D748D51438892C24A9A3 (void);
+extern void ScatterGameSettings_get_BetAmounts_m151B6ED66055484BD08ECBFD4399A5BBEDCB96CE (void);
+extern void ScatterGameSettings_get_DefaultBetIndex_mB56C46026DA1599B79DF46EB32000F6385D426FA (void);
+extern void ScatterGameSettings_get_Symbols_mF003709D0E61A5945A3E8FA50E95B524CDC3260E (void);
+extern void ScatterGameSettings_GetEntry_m90E945C46EB2DDC1BB1A032CFD776C9B8ECBCE2F (void);
+extern void ScatterGameSettings_BuildSlotConfig_m6EC5678749E571176B52361D3ED5EACBCF0C57E9 (void);
+extern void ScatterGameSettings_GetProblems_mDFE1FD4B83E5B01824EDBB54A3294CDDAFEEA63C (void);
+extern void ScatterGameSettings_CopyFrom_mB87D6B093681786C84879F5B122E61CA9EFC8513 (void);
+extern void ScatterGameSettings_OnValidate_mC9F2C78EED33CF858B12668ED91D604BBCF50282 (void);
+extern void ScatterGameSettings_Copy_mBA643FDCD0AA70B01DF57C28BECADE4284E81E10 (void);
+extern void ScatterGameSettings__ctor_m8E8E28534E395E4DF39CD7EE31DC3B76503EDA16 (void);
+extern void ScatterWinRecord__ctor_mAED8F2586A7413B87D1C577C8F92B31C7B51212F (void);
+extern void ScatterSpinRecord__ctor_m407BE9987E344A6BAB40E37DA26BC9772C95A79A (void);
+extern void ScatterRoundRecord__ctor_mB48159872E036413A44640D3D401BD6AEA7B83E0 (void);
+extern void ScatterStatistics_get_NetCredits_m698876017454084D3DBA1AC71EDA189FCA9BFC9A (void);
+extern void ScatterStatistics__ctor_m99B2CFDA580D6397C1C6AB42A604010DE9E81487 (void);
+extern void ScatterHistorySaveData__ctor_m91BC42874B96F27478D8233AA4B4CE664B23A861 (void);
+extern void ScatterHistoryService_get_LastRoundNumber_mCC5A740F254C4DD19CAC470CD75EDBF8D29C0E5A (void);
+extern void ScatterHistoryService_set_LastRoundNumber_mA6EFF9D773DEFA9C911A27E28A5F4AB8D34393F4 (void);
+extern void ScatterHistoryService_get_Statistics_m2D4D01011B7C46003674A6DA40E59AA4D3C92ABF (void);
+extern void ScatterHistoryService_set_Statistics_m2DB8F73DCA9F667D5A4E778013E4BCD996D259BE (void);
+extern void ScatterHistoryService_get_Rounds_m0A7CDEAAA5CC7AEAACD1A93D799D9A0521FF94AC (void);
+extern void ScatterHistoryService__ctor_mA08E414733CDD32DD043A00964FF4A24A97AADCE (void);
+extern void ScatterHistoryService_ReserveNextRoundId_mF2B08BEB42E1844ED052E6262E0863827B578304 (void);
+extern void ScatterHistoryService_AddRound_m28FE4A81C600A05F5537037A199B34B272D25E0A (void);
+extern void ScatterHistoryService_ClearHistory_mBB3A8224E392D317C4A33DAD9BEA8E3D8655605C (void);
+extern void ScatterHistoryService_ResetAll_m6F2418DD0324406BD48FBEB5771CA67B0D0CAAF7 (void);
+extern void ScatterHistoryService_LoadState_m291DCE40F95603027B8331273D0A2CE080968CA4 (void);
+extern void ScatterHistoryService_FromSettlement_m026BB2D90B402D250B73BA51881036298619108E (void);
+extern void ScatterHistoryService_AddSpin_mD5160D7DA070C063E6C2E6DF68EBBB9C29DB8112 (void);
+extern void ScatterHistoryService_ParseNumber_m93472625066B2DB24E1CD3EDCBECA0FCFCF91588 (void);
+static Il2CppMethodPointer s_methodPointers[31] = 
+{
+	SymbolEntry__ctor_m52D149F1EED4372E2768D748D51438892C24A9A3,
+	ScatterGameSettings_get_BetAmounts_m151B6ED66055484BD08ECBFD4399A5BBEDCB96CE,
+	ScatterGameSettings_get_DefaultBetIndex_mB56C46026DA1599B79DF46EB32000F6385D426FA,
+	ScatterGameSettings_get_Symbols_mF003709D0E61A5945A3E8FA50E95B524CDC3260E,
+	ScatterGameSettings_GetEntry_m90E945C46EB2DDC1BB1A032CFD776C9B8ECBCE2F,
+	ScatterGameSettings_BuildSlotConfig_m6EC5678749E571176B52361D3ED5EACBCF0C57E9,
+	ScatterGameSettings_GetProblems_mDFE1FD4B83E5B01824EDBB54A3294CDDAFEEA63C,
+	ScatterGameSettings_CopyFrom_mB87D6B093681786C84879F5B122E61CA9EFC8513,
+	ScatterGameSettings_OnValidate_mC9F2C78EED33CF858B12668ED91D604BBCF50282,
+	ScatterGameSettings_Copy_mBA643FDCD0AA70B01DF57C28BECADE4284E81E10,
+	ScatterGameSettings__ctor_m8E8E28534E395E4DF39CD7EE31DC3B76503EDA16,
+	ScatterWinRecord__ctor_mAED8F2586A7413B87D1C577C8F92B31C7B51212F,
+	ScatterSpinRecord__ctor_m407BE9987E344A6BAB40E37DA26BC9772C95A79A,
+	ScatterRoundRecord__ctor_mB48159872E036413A44640D3D401BD6AEA7B83E0,
+	ScatterStatistics_get_NetCredits_m698876017454084D3DBA1AC71EDA189FCA9BFC9A,
+	ScatterStatistics__ctor_m99B2CFDA580D6397C1C6AB42A604010DE9E81487,
+	ScatterHistorySaveData__ctor_m91BC42874B96F27478D8233AA4B4CE664B23A861,
+	ScatterHistoryService_get_LastRoundNumber_mCC5A740F254C4DD19CAC470CD75EDBF8D29C0E5A,
+	ScatterHistoryService_set_LastRoundNumber_mA6EFF9D773DEFA9C911A27E28A5F4AB8D34393F4,
+	ScatterHistoryService_get_Statistics_m2D4D01011B7C46003674A6DA40E59AA4D3C92ABF,
+	ScatterHistoryService_set_Statistics_m2DB8F73DCA9F667D5A4E778013E4BCD996D259BE,
+	ScatterHistoryService_get_Rounds_m0A7CDEAAA5CC7AEAACD1A93D799D9A0521FF94AC,
+	ScatterHistoryService__ctor_mA08E414733CDD32DD043A00964FF4A24A97AADCE,
+	ScatterHistoryService_ReserveNextRoundId_mF2B08BEB42E1844ED052E6262E0863827B578304,
+	ScatterHistoryService_AddRound_m28FE4A81C600A05F5537037A199B34B272D25E0A,
+	ScatterHistoryService_ClearHistory_mBB3A8224E392D317C4A33DAD9BEA8E3D8655605C,
+	ScatterHistoryService_ResetAll_m6F2418DD0324406BD48FBEB5771CA67B0D0CAAF7,
+	ScatterHistoryService_LoadState_m291DCE40F95603027B8331273D0A2CE080968CA4,
+	ScatterHistoryService_FromSettlement_m026BB2D90B402D250B73BA51881036298619108E,
+	ScatterHistoryService_AddSpin_mD5160D7DA070C063E6C2E6DF68EBBB9C29DB8112,
+	ScatterHistoryService_ParseNumber_m93472625066B2DB24E1CD3EDCBECA0FCFCF91588,
+};
+static const int32_t s_InvokerIndices[31] = 
+{
+	11438,
+	10945,
+	11116,
+	10945,
+	5406,
+	10945,
+	10945,
+	3791,
+	11438,
+	16442,
+	11438,
+	11438,
+	11438,
+	11438,
+	11117,
+	11438,
+	11438,
+	11117,
+	8614,
+	10945,
+	8438,
+	10945,
+	8613,
+	10945,
+	8438,
+	11438,
+	11438,
+	2406,
+	15111,
+	12867,
+	16722,
+};
+IL2CPP_EXTERN_C const Il2CppCodeGenModule g_ScatterGame_Runtime_CodeGenModule;
+const Il2CppCodeGenModule g_ScatterGame_Runtime_CodeGenModule = 
+{
+	"ScatterGame.Runtime.dll",
+	31,
+	s_methodPointers,
+	0,
+	NULL,
+	s_InvokerIndices,
+	0,
+	NULL,
+	0,
+	NULL,
+	0,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+};

@@ -107,7 +107,7 @@ namespace ColorGame.UI
         // "N0" gives thousands separators: 1,000 / 10,000 / 100,000
         private static string Format(long value)
         {
-            return value.ToString("N0", CultureInfo.InvariantCulture);
+            return "₱" + value.ToString("N0", CultureInfo.InvariantCulture);
         }
     }
 }

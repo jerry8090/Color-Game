@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using Shared.Save;
 using Shared.Wallet;
@@ -10,29 +11,29 @@ namespace ColorGame.Gameplay
 {
     /// <summary>
     /// Controls one complete round. This and PayoutCalculator are the ONLY scripts that decide outcomes.
-    /// The UI listens to the events below and only displays what it is told.
-    ///
-    /// PHYSICAL mode (Machine3DPresenter, IPhysicalRollPresenter):
-    ///   validate -> lock + deduct bet -> cubes roll and settle -> READ the real top faces ->
-    ///   calculate payout -> show result -> add winnings -> save round -> back to Idle
-    ///   The result is whatever the cubes show. Nothing is decided in advance and nothing is corrected.
-    ///   If the cubes cannot settle cleanly, the round is cancelled and the bet is refunded.
-    ///
-    /// BETTING CYCLE (used by AutoRollController): BeginBettingWindow() clears the previous choices, the player picks a
-    /// color and a bet, and CloseBettingAndStartRound() runs the machine. If BOTH choices are valid the bet is spent once
-    /// and the round is a normal wagered round. Otherwise the round has NO wager: nothing is spent, recorded, paid or
-    /// counted, but the machine still completes its full cycle.
-    ///
-    /// LEGACY modes (IRollPresenter such as the 2D ColorMachine, or no presenter):
-    ///   the official result is generated first, as before.
-    /// In a real-money version, result generation, payout and wallet changes would run on a server.
+    /// The player can bet on any number of colors (BetSlip). The TOTAL is spent once when the round starts
+    /// (one BET transaction). Winnings are added once. When the round is over (paid, voided or no wager)
+    /// the slip and the chip selection are cleared, after the machine is back on the shelf.
+    /// See the comments in earlier versions for PHYSICAL / BETTING CYCLE / LEGACY modes: unchanged.
     /// </summary>
+ 
+    /// <summary>DEV TEST ONLY (Editor and development builds): what the Force Result button asks for.</summary>
+    public enum ForceResultMode
+    {
+        Off,
+        WinOneMatch,
+        WinTwoMatches,
+        WinThreeMatches,
+        Lose
+    }
+
     public class ColorGameManager : MonoBehaviour
     {
         [Header("References")]
         [SerializeField] private ColorGameConfig config;
         [SerializeField] private VirtualWalletManager walletManager;
         [SerializeField] private BetManager betManager;
+        [SerializeField] private BetSlip betSlip;
         [SerializeField] private GameHistoryManager historyManager;
         [SerializeField] private SaveManager saveManager;
 
@@ -42,77 +43,45 @@ namespace ColorGame.Gameplay
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         [Header("DEV TEST ONLY (Editor and development builds only)")]
-        [Tooltip("Only used WITHOUT the physical machine. Physical results can never be forced.")]
+        [Tooltip("Custom forced colors (works with the 3D machine too). Used when no Force button mode is active.")]
         [SerializeField] private bool useForcedResult = false;
         [SerializeField] private GameColor[] forcedResult = { GameColor.Red, GameColor.Red, GameColor.Red };
 #endif
 
-        /// <summary>Raised whenever the state changes.</summary>
         public event Action<GameState> OnStateChanged;
-
-        /// <summary>Raised when the selection changes. First value: is a color selected? Second: which one.</summary>
         public event Action<bool, GameColor> OnSelectedColorChanged;
-
-        /// <summary>Raised when the bet has been deducted. Carries the new round ID.</summary>
         public event Action<string> OnRoundStarted;
-
-        /// <summary>
-        /// Raised when the roll starts. In PHYSICAL mode the parameter is null, because the result does not exist yet.
-        /// In legacy modes it carries the official colors (do not display them before the roll ends).
-        /// </summary>
         public event Action<GameColor[]> OnRollStarted;
-
-        /// <summary>Raised when the roll is over: the real colors and the PayoutResult (highlight matches).</summary>
         public event Action<GameColor[], PayoutResult> OnResultsShown;
-
-        /// <summary>Raised after winnings were paid, the round saved and the wallet updated.</summary>
         public event Action<GameRound, PayoutResult> OnRoundCompleted;
-
-        /// <summary>Raised when the cubes could not settle cleanly: the bet was refunded and no round was recorded.</summary>
         public event Action<string> OnRoundVoided;
-
-        /// <summary>Raised when a fresh betting window opens. All earlier choices have been cleared.</summary>
         public event Action OnBettingWindowOpened;
-
-        /// <summary>Raised when the betting deadline passes. True = a valid wager was placed, false = no bet.</summary>
         public event Action<bool> OnBettingWindowClosed;
-
-        /// <summary>Raised when a round starts WITHOUT a wager (deadline passed without a color and a bet).</summary>
         public event Action OnRoundSkipped;
-
-        /// <summary>Raised with the real cube colors of a round without a wager. Display only: no win, no loss.</summary>
         public event Action<GameColor[]> OnNoBetResultShown;
-
-        /// <summary>Raised when a round without a wager is over (the colors, or null if the cubes did not settle).</summary>
         public event Action<GameColor[]> OnNoBetRoundCompleted;
 
         public GameState State { get; private set; } = GameState.Idle;
+        
+        /// <summary>The color tapped last (kept for the debug panel and the select sound).</summary>
         public bool HasSelectedColor { get; private set; }
         public GameColor SelectedColor { get; private set; }
 
-        /// <summary>The last finished round (null until one is played). Used by the debug panel.</summary>
         public GameRound LastRound { get; private set; }
         public PayoutResult LastPayout { get; private set; }
-
-        /// <summary>True while a round is being processed (from ROLL until the controls unlock).</summary>
         public bool IsRoundRunning => isRoundRunning;
-
-        /// <summary>True while a bet has been spent and its round is not finished yet (leaving now would lose the bet).</summary>
         public bool HasActiveWager { get; private set; }
-
-        /// <summary>True between BeginBettingWindow() and the deadline.</summary>
         public bool IsBettingOpen { get; private set; }
-
-        /// <summary>True while the physical machine is rolling or returning the cubes to the shelf.</summary>
         public bool IsMachineBusy => physicalPresenter != null && physicalPresenter.IsBusy;
-
-        /// <summary>True when the result comes from real physics.</summary>
         public bool UsesPhysicalResult => physicalPresenter != null;
+        
+        /// <summary>Set by ForceResultUI. Ignored in release builds. Needs a round with a wager.</summary>
+        public ForceResultMode ForcedMode { get; set; } = ForceResultMode.Off;
 
-        /// <summary>True when ROLL may be pressed right now.</summary>
+        /// <summary>True when a round with bets may start right now.</summary>
         public bool CanStartRound =>
             isReady && !isRoundRunning && State == GameState.Idle &&
-            HasSelectedColor && betManager.HasBet && walletManager.CanAfford(betManager.SelectedBet);
+            betSlip.HasBets && walletManager.CanAfford(betSlip.TotalBet);
 
         private IResultService resultService;
         private IRollPresenter presenter;
@@ -123,10 +92,10 @@ namespace ColorGame.Gameplay
 
         private void Awake()
         {
-            if (config == null || walletManager == null || betManager == null ||
+            if (config == null || walletManager == null || betManager == null || betSlip == null ||
                 historyManager == null || saveManager == null)
             {
-                Debug.LogError("[ColorGameManager] A reference is missing in the Inspector.", this);
+                Debug.LogError("[ColorGameManager] A reference is missing in the Inspector (Bet Slip included).", this);
                 return;
             }
 
@@ -157,7 +126,6 @@ namespace ColorGame.Gameplay
             isReady = true;
         }
 
-        /// <summary>Lets a future server-based result service replace the local random generator (legacy modes).</summary>
         public void SetResultService(IResultService service)
         {
             if (service == null)
@@ -168,15 +136,13 @@ namespace ColorGame.Gameplay
             resultService = service;
         }
 
-        /// <summary>Sets a legacy presenter that performs a result decided in advance.</summary>
         public void SetRollPresenter(IRollPresenter newPresenter)
         {
             presenter = newPresenter;
         }
 
-        // ---------- Color selection ----------
+        // ---------- Last tapped color (no longer decides anything) ----------
 
-        /// <summary>Selects a color. Only allowed while the game is Idle.</summary>
         public bool TrySelectColor(GameColor color)
         {
             if (State != GameState.Idle)
@@ -206,7 +172,7 @@ namespace ColorGame.Gameplay
 
         // ---------- Starting a round ----------
 
-        /// <summary>Called by the ROLL button and by AutoRollController. Validates everything, then runs the round.</summary>
+        /// <summary>Manual start (ROLL button, if you ever bring it back). Uses the bets on the slip.</summary>
         public bool TryStartRound()
         {
             if (!isReady)
@@ -221,44 +187,33 @@ namespace ColorGame.Gameplay
                 return false;
             }
 
-            if (!HasSelectedColor)
+            if (!betSlip.HasBets)
             {
-                Debug.LogWarning("[ColorGameManager] No color selected.");
+                Debug.LogWarning("[ColorGameManager] No bets placed.");
                 return false;
             }
 
-            if (!betManager.HasBet)
+            int total = betSlip.TotalBet;
+            if (total <= 0)
             {
-                Debug.LogWarning("[ColorGameManager] No bet selected.");
+                Debug.LogError($"[ColorGameManager] Invalid total bet: {total}");
                 return false;
             }
 
-            int bet = betManager.SelectedBet;
-
-            if (bet <= 0 || !config.IsValidBetAmount(bet))
+            if (!walletManager.CanAfford(total))
             {
-                Debug.LogError($"[ColorGameManager] Invalid bet: {bet}");
-                return false;
-            }
-
-            if (!walletManager.CanAfford(bet))
-            {
-                Debug.LogWarning("[ColorGameManager] Insufficient credits for this bet.");
+                Debug.LogWarning("[ColorGameManager] Insufficient credits for these bets.");
                 return false;
             }
 
             IsBettingOpen = false;
             isRoundRunning = true;
-            StartCoroutine(RoundRoutine(true, SelectedColor, bet)); // color and bet are captured here and cannot change mid-round
+            StartCoroutine(RoundRoutine(true, betSlip.GetBets())); // a copy: the bets cannot change mid-round
             return true;
         }
 
         // ---------- Betting window (used by AutoRollController) ----------
 
-        /// <summary>
-        /// Opens a fresh betting window. The previous color and bet are cleared, so every round
-        /// needs a new explicit choice. Does nothing while a round is running.
-        /// </summary>
         public bool BeginBettingWindow()
         {
             if (!isReady)
@@ -273,6 +228,7 @@ namespace ColorGame.Gameplay
                 return false;
             }
 
+            betSlip.Clear();
             ClearColorSelection();
             betManager.ClearBet();
 
@@ -281,12 +237,7 @@ namespace ColorGame.Gameplay
             return true;
         }
 
-        /// <summary>
-        /// The betting deadline. Starts the machine round in every case.
-        /// Returns true if a valid wager (color AND bet AND enough credits) was placed.
-        /// Without a valid wager nothing is spent or recorded, incomplete choices are cleared,
-        /// and the machine still runs a full cycle.
-        /// </summary>
+        /// <summary>The betting deadline. Starts the machine in every case. True = a wager was placed.</summary>
         public bool CloseBettingAndStartRound()
         {
             if (!isReady || isRoundRunning || State != GameState.Idle)
@@ -296,14 +247,12 @@ namespace ColorGame.Gameplay
                 return false;
             }
 
-            GameColor color = SelectedColor;
-            int bet = betManager.HasBet ? betManager.SelectedBet : 0;
-
-            bool hasWager = HasSelectedColor && bet > 0 && config.IsValidBetAmount(bet) && walletManager.CanAfford(bet);
+            bool hasWager = betSlip.HasBets && walletManager.CanAfford(betSlip.TotalBet);
+            List<ColorBetEntry> bets = hasWager ? betSlip.GetBets() : null;
 
             if (!hasWager)
             {
-                // Color only, bet only, nothing, or unaffordable: drop the incomplete choices.
+                betSlip.Clear();
                 ClearColorSelection();
                 betManager.ClearBet();
             }
@@ -312,31 +261,31 @@ namespace ColorGame.Gameplay
             OnBettingWindowClosed?.Invoke(hasWager);
 
             isRoundRunning = true;
-            StartCoroutine(RoundRoutine(hasWager, color, hasWager ? bet : 0));
+            StartCoroutine(RoundRoutine(hasWager, bets));
             return hasWager;
         }
 
         // ---------- The round ----------
 
-        private IEnumerator RoundRoutine(bool hasWager, GameColor selectedColor, int bet)
+        private IEnumerator RoundRoutine(bool hasWager, List<ColorBetEntry> bets)
         {
-            // try/finally guarantees we always return to Idle, even if something throws.
             try
             {
                 bool physical = physicalPresenter != null;
                 GameColor[] results = null;
 
-                // Legacy modes decide the result first. Physical mode has nothing to decide yet.
                 if (!physical)
                 {
-                    results = GenerateResults();
-                    if (results == null)
-                    {
-                        yield break;
-                    }
+                    results = GenerateResults(hasWager ? bets : null);
+                    if (results == null) yield break;
                 }
 
-                // Lock the controls BEFORE spending, so BetManager does not react to the balance drop.
+                int totalBet = 0;
+                if (hasWager && bets != null)
+                {
+                    foreach (ColorBetEntry entry in bets) totalBet += entry.amount;
+                }
+
                 SetState(GameState.Rolling);
 
                 long startingBalance = 0;
@@ -347,10 +296,10 @@ namespace ColorGame.Gameplay
                     startingBalance = walletManager.GetBalance();
                     roundId = historyManager.ReserveNextRoundId();
 
-                    // Deduct the bet exactly once (creates a BET transaction and saves the game).
-                    if (!walletManager.SpendCredits(bet, roundId))
+                    // The whole wager is spent exactly once (one BET transaction).
+                    if (!walletManager.SpendCredits(totalBet, roundId))
                     {
-                        Debug.LogError($"[ColorGameManager] Could not deduct the bet of {bet}. The machine runs without a wager.", this);
+                        Debug.LogError($"[ColorGameManager] Could not deduct the bet of {totalBet}. The machine runs without a wager.", this);
                         hasWager = false;
                     }
                 }
@@ -360,11 +309,17 @@ namespace ColorGame.Gameplay
                 if (hasWager) OnRoundStarted?.Invoke(roundId);
                 else OnRoundSkipped?.Invoke();
 
-                OnRollStarted?.Invoke(results); // null in physical mode
+                OnRollStarted?.Invoke(results);
 
                 if (physical)
+                { 
+                    // DEV TEST: hand a forced result to the machine (does nothing in release builds).
+                GameColor[] forced = ResolveForcedResult(hasWager ? bets : null);
+                if (forced != null && rollPresenter is IForceableRollPresenter forceable)
                 {
-                    // The cubes roll, collide and settle by themselves. We only wait and then read what they show.
+                 forceable.SetForcedResult(forced);
+                 Debug.LogWarning("[ColorGameManager] DEV TEST: forced result " + string.Join(" / ", forced), this);
+                }
                     GameColor[] physicalResult = null;
                     yield return StartCoroutine(physicalPresenter.PlayPhysicalRoll(c => physicalResult = c));
 
@@ -372,7 +327,7 @@ namespace ColorGame.Gameplay
                     {
                         if (hasWager)
                         {
-                            VoidRound(roundId, bet);
+                            VoidRound(roundId, totalBet);
                         }
                         else
                         {
@@ -406,7 +361,6 @@ namespace ColorGame.Gameplay
                     yield return new WaitForSeconds(animationTime + config.ResultRevealDelay);
                 }
 
-                // No wager: show the real colors and finish. No payout, no history, no statistics, no win or loss.
                 if (!hasWager)
                 {
                     SetState(GameState.ShowingResult);
@@ -418,13 +372,12 @@ namespace ColorGame.Gameplay
                     yield break;
                 }
 
-                // Count matches and calculate the payout from the REAL result. This is the only place a win is decided.
+                // The only place a win is decided: every bet color is paid from the REAL result.
                 SetState(GameState.ShowingResult);
-                PayoutResult payout = payoutCalculator.Calculate(results, selectedColor, bet);
+                PayoutResult payout = payoutCalculator.Calculate(results, bets);
                 OnResultsShown?.Invoke(results, payout);
                 yield return new WaitForSeconds(config.ResultRevealDelay);
 
-                // Pay out, record the round, save. This runs exactly once per round.
                 SetState(GameState.ProcessingPayout);
 
                 if (payout.Winnings > 0)
@@ -437,8 +390,7 @@ namespace ColorGame.Gameplay
 
                 long endingBalance = walletManager.GetBalance();
 
-                GameRound round = GameRound.Create(roundId, selectedColor, bet, results, payout,
-                                                   startingBalance, endingBalance);
+                GameRound round = GameRound.Create(roundId, bets, results, payout, startingBalance, endingBalance);
                 if (round != null) historyManager.AddRound(round);
 
                 saveManager.SaveGame();
@@ -447,18 +399,22 @@ namespace ColorGame.Gameplay
                 LastPayout = payout;
                 OnRoundCompleted?.Invoke(round, payout);
 
-                // Stay locked until the cubes are back on the shelf, so the next betting window opens on a ready machine.
                 yield return WaitForMachineIdle();
             }
             finally
             {
                 HasActiveWager = false;
                 isRoundRunning = false;
-                SetState(GameState.Idle); // unlocks the buttons
+
+                // The round is over (paid, cancelled or without a wager): clear the table for the next round.
+                if (betSlip != null) betSlip.Clear();
+                if (betManager != null) betManager.ClearBet();
+                ClearColorSelection();
+
+                SetState(GameState.Idle);
             }
         }
 
-        // Waits (with a safety timeout) until the machine has returned the cubes to the shelf.
         private IEnumerator WaitForMachineIdle()
         {
             float timeout = 20f;
@@ -471,15 +427,13 @@ namespace ColorGame.Gameplay
             if (timeout <= 0f) Debug.LogWarning("[ColorGameManager] The machine did not finish resetting in time.", this);
         }
 
-        // The cubes never produced a clean result (stuck, out of the tray, never settled).
-        // Nothing is decided and nothing is faked: the bet goes back and no round is recorded.
-        private void VoidRound(string roundId, int bet)
+        private void VoidRound(string roundId, int totalBet)
         {
-            Debug.LogWarning($"[ColorGameManager] {roundId}: the cubes did not settle cleanly. Round cancelled, refunding {bet}.", this);
+            Debug.LogWarning($"[ColorGameManager] {roundId}: the cubes did not settle cleanly. Round cancelled, refunding {totalBet}.", this);
 
-            if (!walletManager.AddCredits(bet, TransactionType.Refund, roundId))
+            if (!walletManager.AddCredits(totalBet, TransactionType.Refund, roundId))
             {
-                Debug.LogError($"[ColorGameManager] Could not refund the bet of {bet} for {roundId}.", this);
+                Debug.LogError($"[ColorGameManager] Could not refund the bet of {totalBet} for {roundId}.", this);
             }
 
             saveManager.SaveGame();
@@ -491,17 +445,16 @@ namespace ColorGame.Gameplay
             return result != null && result.Length == ColorGameConfig.ResultSlotCount;
         }
 
-        private GameColor[] GenerateResults()
+                private GameColor[] GenerateResults(IReadOnlyList<ColorBetEntry> bets)
         {
             GameColor[] results = resultService.GenerateResult();
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (useForcedResult && forcedResult != null && forcedResult.Length == ColorGameConfig.ResultSlotCount)
+            GameColor[] forced = ResolveForcedResult(bets);
+            if (forced != null)
             {
-                Debug.LogWarning("[ColorGameManager] DEV TEST: using the forced result instead of a random one.");
-                results = (GameColor[])forcedResult.Clone();
+                Debug.LogWarning("[ColorGameManager] DEV TEST: using a forced result instead of a random one.");
+                results = forced;
             }
-#endif
 
             if (!IsValidResult(results))
             {
@@ -510,6 +463,93 @@ namespace ColorGame.Gameplay
             }
 
             return results;
+        }
+
+        // Returns the colors to force, or null for a normal random round. Always null in release builds.
+        private GameColor[] ResolveForcedResult(IReadOnlyList<ColorBetEntry> bets)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (ForcedMode != ForceResultMode.Off)
+            {
+                if (bets == null || bets.Count == 0)
+                {
+                    Debug.LogWarning("[ColorGameManager] DEV TEST: Force Result needs a round with a wager. A normal result is used.", this);
+                    return null;
+                }
+                return BuildForcedResult(bets);
+            }
+
+            if (useForcedResult && forcedResult != null && forcedResult.Length == ColorGameConfig.ResultSlotCount)
+            {
+                return (GameColor[])forcedResult.Clone();
+            }
+#endif
+            return null;
+        }
+
+        // WIN: the color with the biggest bet shows 1, 2 or 3 times. LOSE: only colors nobody bet on.
+        private GameColor[] BuildForcedResult(IReadOnlyList<ColorBetEntry> bets)
+        {
+            ColorBetEntry main = bets[0];
+            foreach (ColorBetEntry bet in bets)
+            {
+                if (bet.amount > main.amount) main = bet;
+            }
+
+            List<GameColor> unbet = new List<GameColor>();
+            List<GameColor> otherBets = new List<GameColor>();
+            foreach (ColorDefinition definition in config.Colors)
+            {
+                if (definition == null || definition.color == main.color) continue;
+
+                bool hasBet = false;
+                foreach (ColorBetEntry bet in bets)
+                {
+                    if (bet.color == definition.color) hasBet = true;
+                }
+                (hasBet ? otherBets : unbet).Add(definition.color);
+            }
+
+            GameColor[] result = new GameColor[ColorGameConfig.ResultSlotCount];
+
+            if (ForcedMode == ForceResultMode.Lose)
+            {
+                if (unbet.Count == 0)
+                {
+                    Debug.LogWarning("[ColorGameManager] DEV TEST: every color has a bet, so a losing result is impossible. A normal result is used.", this);
+                    return null;
+                }
+                for (int i = 0; i < result.Length; i++) result[i] = unbet[UnityEngine.Random.Range(0, unbet.Count)];
+                return result;
+            }
+
+            int matches = ForcedMode == ForceResultMode.WinOneMatch ? 1
+                        : ForcedMode == ForceResultMode.WinTwoMatches ? 2 : 3;
+
+            List<int> slots = new List<int> { 0, 1, 2 };
+            Shuffle(slots);
+            Shuffle(unbet);
+            Shuffle(otherBets);
+            List<GameColor> fillers = new List<GameColor>(unbet);
+            fillers.AddRange(otherBets); // distinct fillers, so the winning color keeps the highest count
+
+            for (int i = 0; i < result.Length; i++)
+            {
+                if (i < matches) result[slots[i]] = main.color;
+                else result[slots[i]] = fillers.Count > 0 ? fillers[(i - matches) % fillers.Count] : main.color;
+            }
+            return result;
+        }
+
+        private static void Shuffle<T>(List<T> list)
+        {
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                int j = UnityEngine.Random.Range(0, i + 1);
+                T temp = list[i];
+                list[i] = list[j];
+                list[j] = temp;
+            }
         }
 
         private static bool SameColors(GameColor[] a, GameColor[] b)
@@ -527,10 +567,7 @@ namespace ColorGame.Gameplay
             if (State == newState) return;
 
             State = newState;
-
-            // Betting is only editable while Idle.
             if (betManager != null) betManager.SetLocked(State != GameState.Idle);
-
             OnStateChanged?.Invoke(State);
         }
     }
