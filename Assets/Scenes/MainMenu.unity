@@ -527,7 +527,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 118.9
+  m_fontSize: 120
   m_fontSizeBase: 120
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -712,7 +712,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 42.8
+  m_fontSize: 64
   m_fontSizeBase: 64
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -4821,6 +4821,8 @@ MonoBehaviour:
   pitchVariation: 0.08
   physicsMaxCombined: 1.5
   musicClip: {fileID: 0}
+  symbolWinVolume: 1
+  multiplierVolume: 1
 --- !u!4 &1281015394
 Transform:
   m_ObjectHideFlags: 0
@@ -4922,7 +4924,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 21.4
+  m_fontSize: 42
   m_fontSizeBase: 56
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -5248,6 +5250,9 @@ MonoBehaviour:
   audioManager: {fileID: 1281015393}
   button: {fileID: 1317542949}
   label: {fileID: 1248083879}
+  buttonImage: {fileID: 0}
+  soundOnSprite: {fileID: 0}
+  soundOffSprite: {fileID: 0}
 --- !u!114 &1317542949
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6361,6 +6366,7 @@ GameObject:
   - component: {fileID: 1560947032}
   - component: {fileID: 1560947034}
   - component: {fileID: 1560947033}
+  - component: {fileID: 1560947035}
   m_Layer: 0
   m_Name: ScatterButton
   m_TagString: Untagged
@@ -6445,7 +6451,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 3
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.96, g: 0.96, b: 0.96, a: 1}
@@ -6499,6 +6505,28 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.35}
   m_EffectDistance: {x: 0, y: -6}
   m_UseGraphicAlpha: 1
+--- !u!95 &1560947035
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1560947028}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: c95fa6e02b2125b46ac90c0aae0694f3, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &1605956864
 GameObject:
   m_ObjectHideFlags: 0
@@ -7563,7 +7591,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 16.05
+  m_fontSize: 28
   m_fontSizeBase: 28
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -8123,7 +8151,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 35.65
+  m_fontSize: 34.25
   m_fontSizeBase: 64
   m_fontWeight: 400
   m_enableAutoSizing: 1
