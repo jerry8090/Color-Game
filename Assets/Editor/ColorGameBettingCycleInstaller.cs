@@ -26,9 +26,9 @@ public static class ColorGameBettingCycleInstaller
             return;
         }
 
-        AutoRollController autoRoll = Object.FindFirstObjectByType<AutoRollController>(FindObjectsInactive.Include);
-        ColorGameAudio audio = Object.FindFirstObjectByType<ColorGameAudio>(FindObjectsInactive.Include);
-        Machine3DPresenter machine = Object.FindFirstObjectByType<Machine3DPresenter>(FindObjectsInactive.Include);
+        AutoRollController autoRoll = Object.FindAnyObjectByType<AutoRollController>(FindObjectsInactive.Include);
+        ColorGameAudio audio = Object.FindAnyObjectByType<ColorGameAudio>(FindObjectsInactive.Include);
+        Machine3DPresenter machine = Object.FindAnyObjectByType<Machine3DPresenter>(FindObjectsInactive.Include);
 
         if (autoRoll == null)
         {
@@ -45,7 +45,7 @@ public static class ColorGameBettingCycleInstaller
             Transform parent = FindMachineView();
             if (parent == null)
             {
-                SafeAreaFitter safe = Object.FindFirstObjectByType<SafeAreaFitter>(FindObjectsInactive.Include);
+                SafeAreaFitter safe = Object.FindAnyObjectByType<SafeAreaFitter>(FindObjectsInactive.Include);
                 parent = safe != null ? safe.transform : null;
             }
 
@@ -113,7 +113,7 @@ public static class ColorGameBettingCycleInstaller
 
     private static Transform FindMachineView()
     {
-        foreach (RectTransform rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        foreach (RectTransform rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include))
         {
             if (rect.name == "MachineView") return rect;
         }

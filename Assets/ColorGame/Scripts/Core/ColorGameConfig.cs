@@ -37,7 +37,7 @@ namespace ColorGame.Core
 
         [Header("Bets")]
         [Tooltip("Selectable bet amounts, shown left to right.")]
-        [SerializeField] private List<int> betAmounts = new List<int> { 10, 20, 50, 100, 200, 500 };
+        [SerializeField] private List<int> betAmounts = new List<int> { 1, 5, 20, 50, 200, 500 };
 
         [Header("Payouts")]
         [Tooltip("Element N = multiplier when the selected color appears N times. " +
@@ -147,12 +147,12 @@ namespace ColorGame.Core
                         // Order = the order of the color buttons (matches the reference board).
             return new List<ColorDefinition>
             {
-                MakeDefinition(GameColor.Yellow,  new Color32(255, 229, 59, 255)),
-                MakeDefinition(GameColor.White,   new Color32(245, 245, 245, 255)),
-                MakeDefinition(GameColor.Pink,    new Color32(230, 40, 150, 255)),
-                MakeDefinition(GameColor.Blue,    new Color32(30, 136, 229, 255)),
-                MakeDefinition(GameColor.Red,     new Color32(229, 57, 53, 255)),
-                MakeDefinition(GameColor.Green,   new Color32(67, 194, 59, 255))
+                MakeDefinition(GameColor.Yellow,  new Color32(250, 204, 21, 255)),
+                MakeDefinition(GameColor.Purple,  new Color32(168, 85, 247, 255)),
+                MakeDefinition(GameColor.Orange,  new Color32(251, 146, 60, 255)),
+                MakeDefinition(GameColor.Blue,    new Color32(59, 130, 246, 255)),
+                MakeDefinition(GameColor.Red,     new Color32(229, 75, 75, 255)),
+                MakeDefinition(GameColor.Green,   new Color32(34, 197, 94, 255))
             };
         }
 

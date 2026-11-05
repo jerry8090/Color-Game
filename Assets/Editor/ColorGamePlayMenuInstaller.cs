@@ -29,7 +29,7 @@ public static class ColorGamePlayMenuInstaller
             return;
         }
 
-        if (Object.FindFirstObjectByType<PlayMenuUI>(FindObjectsInactive.Include) != null)
+        if (Object.FindAnyObjectByType<PlayMenuUI>(FindObjectsInactive.Include) != null)
         {
             Debug.Log("[PlayMenu] Already installed. Nothing to do.");
             return;
@@ -142,7 +142,7 @@ public static class ColorGamePlayMenuInstaller
 
     private static T Find<T>() where T : Object
     {
-        return Object.FindFirstObjectByType<T>(FindObjectsInactive.Include);
+        return Object.FindAnyObjectByType<T>(FindObjectsInactive.Include);
     }
 
     private static Button GetButton(Object owner, string field)

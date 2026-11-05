@@ -89,6 +89,13 @@ namespace ColorGame.Gameplay
             OnBetChanged?.Invoke(selectedBet);
             return true;
         }
+        
+        /// <summary>Lets other scripts show a message through the existing toast.</summary>
+        public void Reject(string message)
+        {
+            OnBetRejected?.Invoke(message);
+        }
+    
 
         public void ClearBet()
         {
@@ -122,5 +129,7 @@ namespace ColorGame.Gameplay
             ClearBet();
             OnBetRejected?.Invoke(InsufficientCreditsMessage);
         }
+
+        
     }
 }

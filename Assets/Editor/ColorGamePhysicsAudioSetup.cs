@@ -98,7 +98,7 @@ public static class ColorGamePhysicsAudioSetup
 
     private static void Assign()
     {
-        AudioManager audio = UnityEngine.Object.FindFirstObjectByType<AudioManager>(FindObjectsInactive.Include);
+        AudioManager audio = UnityEngine.Object.FindAnyObjectByType<AudioManager>(FindObjectsInactive.Include);
         if (audio == null)
         {
             Debug.LogWarning("[PhysicsAudio] Sounds were created, but no AudioManager is in the open scene. " +

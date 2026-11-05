@@ -1,0 +1,613 @@
+using System.Collections;
+using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using Shared.Audio;
+using Shared.Save;
+using Shared.Wallet;
+using ScatterGame.Core;
+using ScatterGame.Runtime;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
+
+namespace ScatterGame.Integration
+{
+    public enum ScatterUiState
+    {
+        Idle,
+        Spinning,
+        Cascading,
+        FreeSpins,
+        Settling
+    }
+
+    /// <summary>
+    /// Runs the play screen. The wallet is already settled by ScatterRoundService before any animation starts,
+    /// so this script only PLAYS BACK the finished result: spin, cascades, free spins, banners and counters.
+    /// Closing the app or leaving the scene mid-animation can never lose or duplicate credits.
+    /// </summary>
+    public class ScatterGameController : MonoBehaviour
+    {
+        [Header("Game")]
+        [SerializeField] private ScatterRoundService roundService;
+        [SerializeField] private VirtualWalletManager walletManager;
+        [SerializeField] private SaveManager saveManager;
+        [SerializeField] private AudioManager audioManager;
+
+        [Header("Views")]
+        [SerializeField] private SlotGridView grid;
+        [SerializeField] private ScatterHUD hud;
+        [SerializeField] private ScatterHistoryUI historyUI;
+
+        [Header("Buttons")]
+        [SerializeField] private Button spinButton;
+        [SerializeField] private Button betDownButton;
+        [SerializeField] private Button betUpButton;
+        [SerializeField] private Button autoButton;
+        [SerializeField] private Button homeButton;
+        [SerializeField] private TMP_Text spinLabel;
+        
+        [Header("Spin Button Images")]
+        [SerializeField] private Image spinButtonImage;
+        [SerializeField] private Sprite spinSprite;
+        [SerializeField] private Sprite skipSprite;
+
+        [Header("Auto Button Images")]
+        [SerializeField] private Image autoButtonImage;
+        [SerializeField] private Sprite autoOnSprite;
+        [SerializeField] private Sprite autoOffSprite;
+
+        [Header("Tuning")]
+        [SerializeField] private string mainMenuSceneName = "MainMenu";
+        [Tooltip("Animation speed after SPIN is pressed during a round.")]
+        [SerializeField] private float fastSpeed = 4f;
+        [Tooltip("A win of this many times the bet shows BIG WIN.")]
+        [SerializeField] private int bigWinMultiple = 10;
+        [Tooltip("A win of this many times the bet shows MEGA WIN.")]
+        [SerializeField] private int megaWinMultiple = 25;
+        [SerializeField] private float autoDelaySeconds = 0.9f;
+        [SerializeField] private float bannerHold = 1.4f;
+
+        [Header("Sounds")]
+        [Tooltip("Most different winning symbols that play their own sound in one cascade (highest paying first).")]
+        [SerializeField] private int maxSymbolSoundsPerCascade = 2;
+        [Tooltip("Also play the Wild's own sound when a Wild takes part in a win.")]
+        [SerializeField] private bool playWildSound = true;
+        [Tooltip("Development only: logs every symbol and multiplier sound that plays.")]
+        [SerializeField] private bool logSounds = false;
+
+                [Header("Win display")]
+        [Tooltip("Optional. The floating win overlay. Leave empty to play without it.")]
+        [SerializeField] private ScatterWinOverlay winOverlay;
+        [Tooltip("Development only: logs every win amount, its multiplier and the running totals.")]
+        [SerializeField] private bool logWins = false;
+
+        public ScatterUiState State { get; private set; } = ScatterUiState.Idle;
+
+        private ScatterGameSettings settings;
+        private SlotConfig config;
+        private int wildId;
+        private int betIndex;
+        private bool isReady;
+        private bool isBusy;
+        private bool isLeaving;
+        private bool autoOn;
+        private float autoTimer;
+        private float speed = 1f;
+        private long balanceBase;
+        private long runningMilli;
+        private readonly SpinWinLedger ledger = new SpinWinLedger();
+        private long currentBet;
+
+        private int scatterId = -1;
+        private readonly MultiplierSoundTracker multiplierTracker = new MultiplierSoundTracker();
+
+        private int CurrentBet => settings.BetAmounts[betIndex];
+
+        private void Awake()
+        {
+            if (roundService == null || walletManager == null || saveManager == null || grid == null || hud == null ||
+                spinButton == null || betDownButton == null || betUpButton == null || autoButton == null || homeButton == null)
+            {
+                Debug.LogError("[ScatterGameController] A reference is missing in the Inspector.", this);
+                enabled = false;
+            }
+        }
+
+        private void OnEnable()
+        {
+            if (walletManager != null) walletManager.OnBalanceChanged += HandleBalanceChanged;
+            if (grid != null) grid.OnReelStopped += HandleReelStopped;
+        }
+
+        private void OnDisable()
+        {
+            if (walletManager != null) walletManager.OnBalanceChanged -= HandleBalanceChanged;
+            if (grid != null) grid.OnReelStopped -= HandleReelStopped;
+        }
+
+        private void Start()
+        {
+            // All Awake methods have run by now, so the round service is ready.
+            if (!roundService.IsReady)
+            {
+                Debug.LogError("[ScatterGameController] ScatterRoundService is not ready. Check its settings asset and references.", this);
+                enabled = false;
+                return;
+            }
+
+            settings = roundService.Settings;
+            config = settings.BuildSlotConfig();
+            wildId = config.WildSymbolId;
+            foreach (SymbolDefinition symbol in config.Symbols)
+            {
+                if (symbol != null && symbol.IsScatter) { scatterId = symbol.Id; break; }
+            }
+
+            if (!grid.Init(settings))
+            {
+                enabled = false;
+                return;
+            }
+
+            grid.ShowGrid(GridGenerator.Generate(new WeightedSymbolSource(config, new System.Random())));
+
+            betIndex = settings.DefaultBetIndex;
+            hud.SetBet(CurrentBet);
+            hud.SetBalance(walletManager.GetBalance(), true);
+            hud.SetWin(0, true);
+            hud.SetMultiplier(config.PaidMultiplierLadder[0], false);
+
+            spinButton.onClick.RemoveAllListeners();
+            spinButton.onClick.AddListener(OnSpinPressed);
+            betDownButton.onClick.RemoveAllListeners();
+            betDownButton.onClick.AddListener(() => ChangeBet(-1));
+            betUpButton.onClick.RemoveAllListeners();
+            betUpButton.onClick.AddListener(() => ChangeBet(1));
+            autoButton.onClick.RemoveAllListeners();
+            autoButton.onClick.AddListener(ToggleAuto);
+            homeButton.onClick.RemoveAllListeners();
+            homeButton.onClick.AddListener(GoHome);
+
+            SetAuto(false);
+            isReady = true;
+        }
+
+        private void Update()
+        {
+            if (!isReady || isLeaving) return;
+
+            bool canPlay = false;
+            if (!isBusy)
+            {
+                canPlay = roundService.CanPlay(CurrentBet, out string reason);
+                hud.SetStatus(canPlay ? string.Empty : reason);
+            }
+
+            spinButton.interactable = isBusy || canPlay;
+            betDownButton.interactable = !isBusy && betIndex > 0;
+            betUpButton.interactable = !isBusy && betIndex < settings.BetAmounts.Count - 1;
+            if (historyUI != null) historyUI.SetOpenEnabled(!isBusy);
+            if (spinButtonImage != null)
+            {
+              spinButtonImage.sprite = isBusy ? skipSprite : spinSprite;
+            }
+
+            if (autoOn && !isBusy && (historyUI == null || !historyUI.IsOpen))
+            {
+                autoTimer += Time.deltaTime;
+                if (autoTimer >= autoDelaySeconds)
+                {
+                    autoTimer = 0f;
+                    if (canPlay) StartRound();
+                    else SetAuto(false); // cannot afford the next spin
+                }
+            }
+
+            if (BackPressed())
+            {
+                if (historyUI != null && historyUI.IsOpen) historyUI.Close();
+                else GoHome();
+            }
+        }
+
+        // ---------- Buttons ----------
+
+        private void OnSpinPressed()
+        {
+            if (!isReady) return;
+
+            if (isBusy)
+            {
+                SetSpeed(fastSpeed); // fast-forward the running round
+                return;
+            }
+
+            if (!roundService.CanPlay(CurrentBet, out _)) return;
+            Click();
+            StartRound();
+        }
+
+        private void ChangeBet(int delta)
+        {
+            if (isBusy) return;
+
+            int next = Mathf.Clamp(betIndex + delta, 0, settings.BetAmounts.Count - 1);
+            if (next == betIndex) return;
+
+            betIndex = next;
+            hud.SetBet(CurrentBet);
+            Click();
+        }
+
+        private void ToggleAuto()
+        {
+            Click();
+            SetAuto(!autoOn);
+        }
+
+        private void SetAuto(bool on)
+{
+    autoOn = on;
+    autoTimer = 0f;
+
+    // Update the Auto button image.
+    if (autoButtonImage != null)
+    {
+        autoButtonImage.sprite = autoOn ? autoOnSprite : autoOffSprite;
+    }
+
+    // Keep the old text behavior if a label is still assigned.
+    
+}
+
+        private void GoHome()
+        {
+            if (isLeaving) return;
+
+            if (!Application.CanStreamedLevelBeLoaded(mainMenuSceneName))
+            {
+                Debug.LogError($"[ScatterGameController] Scene '{mainMenuSceneName}' is not in the build list (File > Build Profiles > Scene List).", this);
+                return;
+            }
+
+            isLeaving = true;
+            Click();
+            saveManager.SaveGame(); // the wallet was settled before the animation, so leaving is always safe
+            SceneManager.LoadScene(mainMenuSceneName);
+        }
+
+        // ---------- Round ----------
+
+        private void StartRound()
+        {
+            if (isBusy) return;
+            StartCoroutine(RoundRoutine());
+        }
+
+        private IEnumerator RoundRoutine()
+        {
+            isBusy = true;
+            SetSpeed(1f);
+            State = ScatterUiState.Spinning;
+            if (historyUI != null && historyUI.IsOpen) historyUI.Close();
+
+            int bet = CurrentBet;
+            SettlementResult result;
+            if (!roundService.TryPlayRound(bet, out result))
+            {
+                FinishRound(false);
+                yield break;
+            }
+
+            RoundResult round = result.Round;
+            balanceBase = result.BalanceBefore - result.Bet;
+            runningMilli = 0;
+            currentBet = bet;
+            ledger.BeginRound();
+            if (winOverlay != null) winOverlay.ResetForNewRound();
+
+
+            hud.SetBalance(balanceBase, false);
+            hud.SetWin(0, true);
+            hud.HideFreeSpins();
+
+            yield return PlaySpin(round.PaidSpin, false, true, 0);
+
+            if (round.BonusTriggered) yield return PlayBonus(round);
+
+            State = ScatterUiState.Settling;
+            hud.SetWin(result.CreditsPaid, false);
+            hud.SetBalance(walletManager.GetBalance(), false);
+            if (winOverlay != null) winOverlay.Finish(result.CreditsPaid);
+
+            if (result.CreditsPaid > 0)
+            {
+                PlaySfx(SfxType.Win);
+
+                if (result.CreditsPaid >= (long)bet * megaWinMultiple)
+                    yield return hud.ShowBanner("MEGA WIN\n" + result.CreditsPaid.ToString("N0"), bannerHold);
+                else if (result.CreditsPaid >= (long)bet * bigWinMultiple)
+                    yield return hud.ShowBanner("BIG WIN\n" + result.CreditsPaid.ToString("N0"), bannerHold);
+            }
+
+            FinishRound(round.BonusTriggered);
+        }
+
+        private void FinishRound(bool stopAuto)
+        {
+            isBusy = false;
+            State = ScatterUiState.Idle;
+            autoTimer = 0f;
+            SetSpeed(1f);
+            if (stopAuto) SetAuto(false);
+        }
+
+                       // One spin: reels, then every cascade. Used for the paid spin (0) and for every free spin (1, 2, ...).
+        private IEnumerator PlaySpin(SpinResult spin, bool isFree, bool resetMultiplier, int spinNumber)
+        {
+            ledger.BeginSpin(spinNumber, isFree);
+
+            if (resetMultiplier)
+            {
+                int[] ladder = isFree ? config.FreeSpinMultiplierLadder : config.PaidMultiplierLadder;
+                hud.SetMultiplier(Mathf.Min(ladder[0], config.MaxMultiplier), false);
+                multiplierTracker.Reset(); // a new multiplier run: its first level plays its sound again
+            }
+
+            State = ScatterUiState.Spinning;
+            PlaySfx(SfxType.Roll);
+            yield return grid.SpinTo(spin.InitialGrid);
+
+            if (spin.ScatterCount >= config.MinScattersForBonus)
+            {
+                if (!PlaySymbolSound(scatterId, "scatter bonus")) PlaySfx(SfxType.Select); // old click if no Scatter sound
+                yield return grid.PulseCategory(SymbolCategory.Scatter);
+            }
+
+            if (spin.ScatterWinMilli > 0)
+            {
+                runningMilli += spin.ScatterWinMilli;
+                UpdateWinHud();
+                PresentWins(ledger.AddScatterPay(scatterId, spin.ScatterWinMilli), 1);
+            }
+
+            State = isFree ? ScatterUiState.FreeSpins : ScatterUiState.Cascading;
+
+            foreach (CascadeStep step in spin.Steps)
+            {
+                hud.SetMultiplier(step.Multiplier, true);
+                PlayMultiplierSound(step.Multiplier);
+                PlayWinSounds(step);
+
+                HashSet<GridPosition> winning = new HashSet<GridPosition>();
+                foreach (SymbolWin win in step.Wins)
+                {
+                    foreach (GridPosition position in win.Positions) winning.Add(position);
+                }
+
+                yield return grid.Highlight(winning);
+
+                runningMilli += step.WinMilli;
+                UpdateWinHud();
+                PresentWins(ledger.AddCascade(step, currentBet), step.Multiplier);
+                PlaySfx(SfxType.SlotStop);
+
+                yield return grid.Cascade(step, wildId);
+            }
+
+            if (spin.HitCascadeLimit) yield return hud.ShowBanner("CASCADE LIMIT", bannerHold * 0.5f);
+        }
+
+        // Mirrors RoundResolver: total free spins grow by the retrigger amount, up to the per-round cap.
+        private IEnumerator PlayBonus(RoundResult round)
+        {
+            State = ScatterUiState.FreeSpins;
+            int total = round.FreeSpinsAwardedInitial;
+            yield return hud.ShowBanner("FREE SPINS\n" + total, bannerHold);
+
+            for (int i = 0; i < round.FreeSpins.Count; i++)
+            {
+                SpinResult spin = round.FreeSpins[i];
+                hud.SetFreeSpins(i + 1, total);
+
+                bool resetMultiplier = !config.FreeSpinMultiplierPersists || i == 0;
+                yield return PlaySpin(spin, true, resetMultiplier, i + 1);
+
+                if (spin.ScatterCount >= config.MinScattersForBonus)
+                {
+                    int extra = Mathf.Min(config.RetriggerFreeSpins, config.MaxTotalFreeSpinsPerRound - total);
+                    if (extra > 0)
+                    {
+                        total += extra;
+                        hud.SetFreeSpins(i + 1, total);
+                        yield return hud.ShowBanner("+" + extra + " FREE SPINS", bannerHold * 0.7f);
+                    }
+                }
+            }
+
+            hud.HideFreeSpins();
+            yield return hud.ShowBanner("BONUS COMPLETE", bannerHold * 0.7f);
+        }
+
+        // ---------- Helpers ----------
+
+
+                // ---------- Win overlay ----------
+
+        // Called once per confirmed win, with the entries the ledger just recorded. An empty list means a duplicate: nothing happens.
+        private void PresentWins(List<WinEntry> added, int multiplier)
+        {
+            if (added == null || added.Count == 0) return;
+
+            long latest = ledger.LastCascadeMilli;
+            if (logWins)
+            {
+                Debug.Log("[ScatterWin] spin " + ledger.SpinNumber + (ledger.IsFreeSpin ? " (free)" : " (paid)") +
+                          ": " + ScatterWinFormat.Signed(latest) + " at x" + multiplier +
+                          " | spin total " + ScatterWinFormat.Credits(ledger.SpinTotalMilli) +
+                          " | round total " + ScatterWinFormat.Credits(ledger.RoundTotalMilli), this);
+            }
+
+            if (winOverlay == null) return;
+
+            string header = ledger.IsFreeSpin ? "TOTAL WIN   |   FREE SPIN " + ledger.SpinNumber : "TOTAL WIN";
+            winOverlay.ShowWin(header, latest, multiplier, ledger.RoundTotalMilli,
+                               ScatterWinFormat.BuildComboText(added, SymbolName, 3));
+        }
+
+        private string SymbolName(int symbolId)
+        {
+            SymbolEntry entry = settings.GetEntry(symbolId);
+            return entry != null && !string.IsNullOrEmpty(entry.displayName) ? entry.displayName.ToUpperInvariant() : symbolId.ToString();
+        }
+
+        // ---------- Symbol and multiplier sounds ----------
+
+        // Called once per winning cascade, from the playback of an already-settled result. Never from Update.
+        private void PlayWinSounds(CascadeStep step)
+        {
+            foreach (int id in ScatterSoundPlanner.PickWinSymbols(step.Wins, HasWinSound, maxSymbolSoundsPerCascade))
+            {
+                PlaySymbolSound(id, "win");
+            }
+
+            if (playWildSound && ScatterSoundPlanner.WildTookPart(step.Wins, step.GridBefore, wildId))
+            {
+                PlaySymbolSound(wildId, "wild in a win");
+            }
+        }
+
+        private bool HasWinSound(int symbolId)
+        {
+            return settings.TryGetWinSound(symbolId, out _, out _);
+        }
+
+        // True if the symbol has a sound (so the caller can fall back to another sound when it has none).
+        private bool PlaySymbolSound(int symbolId, string reason)
+        {
+            if (audioManager == null || symbolId < 0) return false;
+            if (!settings.TryGetWinSound(symbolId, out AudioClip clip, out float volume)) return false;
+
+            audioManager.PlayClip(clip, SfxChannel.Symbol, volume);
+            if (logSounds) Debug.Log("[ScatterSound] symbol " + symbolId + " (" + reason + "): " + clip.name, this);
+            return true;
+        }
+
+        // One sound per NEW multiplier level. The same level again plays nothing.
+        private void PlayMultiplierSound(int multiplier)
+        {
+            if (!multiplierTracker.ShouldPlay(multiplier)) return;
+
+            if (audioManager == null || !settings.TryGetMultiplierSound(multiplier, out AudioClip clip, out float volume))
+            {
+                if (logSounds) Debug.Log("[ScatterSound] x" + multiplier + ": no sound assigned.", this);
+                return;
+            }
+
+            audioManager.PlayClip(clip, SfxChannel.Multiplier, volume);
+            if (logSounds) Debug.Log("[ScatterSound] x" + multiplier + ": " + clip.name, this);
+        }
+
+        // Right-click the component header in Play mode. Plays every assigned sound once, one after another.
+        [ContextMenu("TEST: Play All Multiplier Sounds")]
+        private void TestMultiplierSounds()
+        {
+            if (!isReady) { Debug.LogWarning("[ScatterGameController] Press Play first."); return; }
+            StartCoroutine(TestSoundsRoutine(true));
+        }
+
+        [ContextMenu("TEST: Play All Symbol Sounds")]
+        private void TestSymbolSounds()
+        {
+            if (!isReady) { Debug.LogWarning("[ScatterGameController] Press Play first."); return; }
+            StartCoroutine(TestSoundsRoutine(false));
+        }
+
+        private IEnumerator TestSoundsRoutine(bool multipliers)
+        {
+            int count = multipliers ? config.MaxMultiplier : settings.Symbols.Count;
+            for (int i = 0; i < count; i++)
+            {
+                AudioClip clip;
+                float volume;
+                bool found;
+                string name;
+
+                if (multipliers)
+                {
+                    name = "x" + (i + 1);
+                    found = settings.TryGetMultiplierSound(i + 1, out clip, out volume);
+                }
+                else
+                {
+                    SymbolEntry entry = settings.Symbols[i];
+                    name = entry != null ? entry.displayName : "?";
+                    clip = null;
+                    volume = 1f;
+                    found = entry != null && settings.TryGetWinSound(entry.id, out clip, out volume);
+                }
+
+                if (!found)
+                {
+                    Debug.Log("[ScatterSound] " + name + ": no sound assigned.", this);
+                    continue;
+                }
+
+                audioManager.PlayClip(clip, multipliers ? SfxChannel.Multiplier : SfxChannel.Symbol, volume);
+                Debug.Log("[ScatterSound] " + name + ": " + clip.name, this);
+                yield return new WaitForSeconds(Mathf.Min(clip.length, 2f) + 0.2f);
+            }
+        }
+
+        private void UpdateWinHud()
+        {
+            long credits = runningMilli / 1000; // whole credits, rounded down like the settlement
+            hud.SetWin(credits, false);
+            hud.SetBalance(balanceBase + credits, false);
+        }
+
+        private void SetSpeed(float value)
+        {
+            speed = value;
+            grid.Speed = value;
+            hud.Speed = value;
+            if (winOverlay != null) winOverlay.Speed = value;
+        }
+
+        private void HandleBalanceChanged(long balance)
+        {
+            // While a round is playing back, the counters follow the animation instead.
+            if (!isBusy && isReady) hud.SetBalance(balance, false);
+        }
+
+        private void HandleReelStopped(int reel)
+        {
+            PlaySfx(SfxType.SlotStop);
+        }
+
+        private void Click()
+        {
+            PlaySfx(SfxType.ButtonClick);
+        }
+
+        private void PlaySfx(SfxType type)
+        {
+            if (audioManager != null) audioManager.PlaySfx(type);
+        }
+
+        private static bool BackPressed()
+        {
+#if ENABLE_INPUT_SYSTEM
+            return Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
+#elif ENABLE_LEGACY_INPUT_MANAGER
+            return Input.GetKeyDown(KeyCode.Escape);
+#else
+            return false;
+#endif
+        }
+    }
+}

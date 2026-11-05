@@ -42,7 +42,7 @@ public static class ColorGame3DStep2Installer
             return;
         }
 
-        ColorGameManager gameManager = Object.FindFirstObjectByType<ColorGameManager>();
+        ColorGameManager gameManager = Object.FindAnyObjectByType<ColorGameManager>();
         if (gameManager == null)
         {
             Debug.LogError("[Step2] ColorGameManager was not found in the open scene.");

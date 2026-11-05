@@ -59,7 +59,10 @@ namespace ColorGame.UI
 
             string bet = round.betAmount.ToString("N0", CultureInfo.InvariantCulture);
             string won = round.winnings.ToString("N0", CultureInfo.InvariantCulture);
-            detailsText.text = $"BET {ColorWord(config, round.selectedColor)} {bet}  |  MATCHES {round.matches}  |  WON {won}";
+                        string betWhat = round.colorBets != null && round.colorBets.Count > 1
+                ? round.colorBets.Count + " COLORS"
+                : ColorWord(config, round.selectedColor);
+            detailsText.text = $"BET {betWhat} {bet}  |  MATCHES {round.matches}  |  WON {won}";
 
             // NET = winnings minus the bet. A 1-match round at 1x honestly shows 0.
             long net = round.NetResult;
