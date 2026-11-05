@@ -97,14 +97,22 @@ namespace ColorGame.UI.Casino
             if (started) Subscribe();
         }
 
+        // True only while every Unity object this script touches still exists.
+        // During a scene change Unity can destroy the CanvasGroup / panels BEFORE this component's OnDisable runs.
+        private bool UiAlive()
+        {
+            return sectionGroup != null && resultSection != null && slotsContainer != null && flash != null;
+        }
+
         private void OnDisable()
         {
             Unsubscribe();
+            StopAllCoroutines();
             fadeRoutine = null;
             scaleRoutine = null;
             countRoutine = null;
             burstRoutine = null;
-            if (!ready) return;
+            if (!ready || !UiAlive()) return;
 
             sectionGroup.alpha = 1f;
             ResetScales();
@@ -154,6 +162,7 @@ namespace ColorGame.UI.Casino
 
         private void HandleRoundCompleted(GameRound round, PayoutResult payout)
         {
+            if (!ready || !UiAlive()) return;
             if (payout == null || !payout.IsWin) return; // a loss gets only the subtle reveal
 
             if (winningAmountText != null && payout.Winnings > 0)
@@ -180,6 +189,7 @@ namespace ColorGame.UI.Casino
 
         private void StartScale(IEnumerator routine)
         {
+            if (!ready || !UiAlive()) return;
             if (scaleRoutine != null) StopCoroutine(scaleRoutine);
             ResetScales();
             scaleRoutine = StartCoroutine(routine);
@@ -187,35 +197,39 @@ namespace ColorGame.UI.Casino
 
         private void ResetScales()
         {
-            resultSection.localScale = sectionBase;
-            slotsContainer.localScale = slotsBase;
+            if (resultSection != null) resultSection.localScale = sectionBase;
+            if (slotsContainer != null) slotsContainer.localScale = slotsBase;
         }
 
         // ---------- Section animations ----------
 
         private void FadeTo(float target)
         {
+            if (!ready || !UiAlive()) return;
             if (fadeRoutine != null) StopCoroutine(fadeRoutine);
             fadeRoutine = StartCoroutine(FadeRoutine(target));
         }
 
         private IEnumerator FadeRoutine(float target)
         {
+            if (!UiAlive()) { fadeRoutine = null; yield break; }
             float from = sectionGroup.alpha;
             float t = 0f;
             while (t < 1f)
             {
+                if (!UiAlive()) { fadeRoutine = null; yield break; }
                 t += Time.unscaledDeltaTime / 0.3f;
                 sectionGroup.alpha = Mathf.Lerp(from, target, CasinoUIAnimationController.EaseOutCubic(t));
                 yield return null;
             }
-            sectionGroup.alpha = target;
+            if (UiAlive()) sectionGroup.alpha = target;
             fadeRoutine = null;
         }
 
         private IEnumerator RevealRoutine(bool win)
         {
             if (fadeRoutine != null) { StopCoroutine(fadeRoutine); fadeRoutine = null; }
+            if (!UiAlive()) { scaleRoutine = null; yield break; }
 
             float duration = Mathf.Max(0.1f, controller.ResultDuration);
             float startScale = win ? controller.ResultStartScale : Mathf.Lerp(controller.ResultStartScale, 1f, 0.6f);
@@ -226,6 +240,7 @@ namespace ColorGame.UI.Casino
 
             while (t < 1f)
             {
+                if (!UiAlive()) { scaleRoutine = null; yield break; }
                 t += Time.unscaledDeltaTime / duration;
                 float k = Mathf.Clamp01(t);
                 sectionGroup.alpha = Mathf.Lerp(startAlpha, 1f, CasinoUIAnimationController.EaseOutCubic(k));
@@ -235,10 +250,13 @@ namespace ColorGame.UI.Casino
                 yield return null;
             }
 
-            sectionGroup.alpha = 1f;
-            resultSection.localScale = sectionBase;
-            tint.a = 0f;
-            flash.color = tint;
+            if (UiAlive())
+            {
+                sectionGroup.alpha = 1f;
+                resultSection.localScale = sectionBase;
+                tint.a = 0f;
+                flash.color = tint;
+            }
             scaleRoutine = null;
         }
 
@@ -246,6 +264,7 @@ namespace ColorGame.UI.Casino
         {
             // If a reveal was cut short, finish its alpha and flash cleanly.
             if (fadeRoutine != null) { StopCoroutine(fadeRoutine); fadeRoutine = null; }
+            if (!UiAlive()) { scaleRoutine = null; yield break; }
             sectionGroup.alpha = 1f;
             Color clear = controller.Gold;
             clear.a = 0f;
@@ -256,11 +275,12 @@ namespace ColorGame.UI.Casino
             float t = 0f;
             while (t < 1f)
             {
+                if (!UiAlive()) { scaleRoutine = null; yield break; }
                 t += Time.unscaledDeltaTime / duration;
                 slotsContainer.localScale = slotsBase * Mathf.Lerp(1f, peak, Mathf.Sin(Mathf.Clamp01(t) * Mathf.PI));
                 yield return null;
             }
-            slotsContainer.localScale = slotsBase;
+            if (slotsContainer != null) slotsContainer.localScale = slotsBase;
             scaleRoutine = null;
         }
 
@@ -272,13 +292,17 @@ namespace ColorGame.UI.Casino
 
             while (t < 1f)
             {
+                if (winningAmountText == null) { countRoutine = null; yield break; }
                 t += Time.unscaledDeltaTime / duration;
                 long value = (long)Math.Round(target * (double)CasinoUIAnimationController.EaseOutCubic(t));
                 winningAmountText.text = "WINNINGS: " + value.ToString("N0", CultureInfo.InvariantCulture) + "  |  NET " + netText;
                 yield return null;
             }
 
-            winningAmountText.text = "WINNINGS: " + target.ToString("N0", CultureInfo.InvariantCulture) + "  |  NET " + netText;
+            if (winningAmountText != null)
+            {
+                winningAmountText.text = "WINNINGS: " + target.ToString("N0", CultureInfo.InvariantCulture) + "  |  NET " + netText;
+            }
             countRoutine = null;
         }
 
@@ -312,7 +336,7 @@ namespace ColorGame.UI.Casino
         {
             for (int i = 0; i < pool.Length && count > 0; i++)
             {
-                if (live[i]) continue;
+                if (live[i] || pool[i] == null) continue;
 
                 float size = UnityEngine.Random.Range(controller.ParticleSize.x, controller.ParticleSize.y);
                 float angle = UnityEngine.Random.Range(20f, 160f) * Mathf.Deg2Rad;
@@ -345,6 +369,13 @@ namespace ColorGame.UI.Casino
                 for (int i = 0; i < pool.Length; i++)
                 {
                     if (!live[i]) continue;
+
+                    if (pool[i] == null) // destroyed with its parent
+                    {
+                        live[i] = false;
+                        liveCount--;
+                        continue;
+                    }
 
                     life[i] -= dt;
                     if (life[i] <= 0f)
