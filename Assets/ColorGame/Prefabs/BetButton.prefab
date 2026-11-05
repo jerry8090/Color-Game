@@ -152,6 +152,8 @@ GameObject:
   - component: {fileID: 277874979004793459}
   - component: {fileID: 8457331611602611172}
   - component: {fileID: 7164853979348760063}
+  - component: {fileID: 2476341352931280922}
+  - component: {fileID: 1621612945624549822}
   m_Layer: 5
   m_Name: BetButton
   m_TagString: Untagged
@@ -316,3 +318,32 @@ MonoBehaviour:
   selectedOutlineDistance: {x: 6, y: 6}
   selectedScale: 1.08
   unaffordableAlpha: 0.35
+--- !u!114 &2476341352931280922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4014211922574378724}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf546b1cfdf676c4db903a2b7b659330, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ColorGame.UI.Casino.CasinoGlowPulse
+  controller: {fileID: 0}
+  outline: {fileID: 277874979004793459}
+  glowColor: {r: 1, g: 0.84, b: 0.29, a: 1}
+--- !u!114 &1621612945624549822
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4014211922574378724}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62324860fd125a540840c1be31cb37ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ColorGame.UI.Casino.CasinoButtonFeedback
+  controller: {fileID: 0}
+  target: {fileID: 2744794814411843176}
