@@ -13,9 +13,13 @@ namespace ColorGame.UI.Casino
     /// Result-panel animation. DISPLAY ONLY. It never touches cubes, results, payouts or credits.
     ///   OnRollStarted    : the result section dims a little while the cubes roll.
     ///   OnResultsShown   : (the cubes have REALLY stopped) fade up + scale 92% to 100% + gold flash.
-    ///   OnRoundCompleted : WIN = winnings count-up, slot bounce and gold burst. LOSE = nothing extra.
-    /// Events are subscribed in Start(), AFTER RoyalGoldHUD subscribed in OnEnable, so the HUD writes its
-    /// text first and this script then animates over it without a flicker.
+    ///   OnRoundCompleted : WIN = winnings count-up, a small bounce and gold sparks on the matching boxes.
+    ///                      LOSE = nothing extra.
+    /// Events are subscribed in Start(), AFTER GameResultUI subscribed in OnEnable, so GameResultUI writes its
+    /// text first and the count-up then animates over it in the same frame, without a flicker.
+    /// The count-up uses the exact text format GameResultUI uses: "WINNINGS: 30  |  NET +10".
+    /// Result Section and Slots Container may be the same object (ResultPanel). The reveal and the bounce share
+    /// one scale routine, so they can never fight over that scale.
     /// Put this on an always-active object (for example the CasinoUI object).
     /// </summary>
     public class CasinoResultAnimator : MonoBehaviour
@@ -23,20 +27,18 @@ namespace ColorGame.UI.Casino
         [Header("References")]
         [SerializeField] private CasinoUIAnimationController controller;
         [SerializeField] private ColorGameManager gameManager;
-        [Tooltip("RoyalGoldUI > ResultSection")]
+        [Tooltip("The panel that holds the three result boxes (ResultPanel).")]
         [SerializeField] private RectTransform resultSection;
-        [Tooltip("RoyalGoldUI > ResultSection > ResultColorSlots (its 3 children are the result pills)")]
+        [Tooltip("The object that bounces on a win. May be the same ResultPanel.")]
         [SerializeField] private RectTransform slotsContainer;
-        [Tooltip("RoyalGoldUI > EffectsLayer (particles live here). Empty = no particles.")]
+        [Tooltip("EffectsLayer (the gold sparks live here). Empty = no sparks.")]
         [SerializeField] private RectTransform effectsLayer;
-        [Tooltip("RoyalGoldUI > ResultSection > SummaryGroup > WinningAmountText. Empty = no count-up.")]
+        [Tooltip("WinningsText (the text GameResultUI writes). Empty = no count-up.")]
         [SerializeField] private TMP_Text winningAmountText;
 
         [Header("Optional")]
-        [Tooltip("RoundedRect.png gives the gold flash rounded corners.")]
+        [Tooltip("RoundedRect gives the gold flash rounded corners.")]
         [SerializeField] private Sprite flashSprite;
-        [Tooltip("Must match the text RoyalGoldHUD writes.")]
-        [SerializeField] private string winningsPrefix = "WINNINGS: \u20B1";
 
         private CanvasGroup sectionGroup;
         private Image flash;
@@ -44,9 +46,8 @@ namespace ColorGame.UI.Casino
         private Vector3 slotsBase = Vector3.one;
 
         private Coroutine fadeRoutine;
-        private Coroutine revealRoutine;
+        private Coroutine scaleRoutine; // reveal OR bounce, never both
         private Coroutine countRoutine;
-        private Coroutine bounceRoutine;
         private Coroutine burstRoutine;
 
         private Image[] pool;
@@ -99,12 +100,14 @@ namespace ColorGame.UI.Casino
         private void OnDisable()
         {
             Unsubscribe();
-            fadeRoutine = revealRoutine = countRoutine = bounceRoutine = burstRoutine = null;
+            fadeRoutine = null;
+            scaleRoutine = null;
+            countRoutine = null;
+            burstRoutine = null;
             if (!ready) return;
 
             sectionGroup.alpha = 1f;
-            resultSection.localScale = sectionBase;
-            slotsContainer.localScale = slotsBase;
+            ResetScales();
             flash.color = new Color(1f, 1f, 1f, 0f);
             ClearParticles();
         }
@@ -141,12 +144,12 @@ namespace ColorGame.UI.Casino
 
         private void HandleResultsShown(GameColor[] results, PayoutResult payout)
         {
-            Restart(ref revealRoutine, RevealRoutine(payout != null && payout.IsWin));
+            StartScale(RevealRoutine(payout != null && payout.IsWin));
         }
 
         private void HandleNoBetResultShown(GameColor[] results)
         {
-            Restart(ref revealRoutine, RevealRoutine(false));
+            StartScale(RevealRoutine(false));
         }
 
         private void HandleRoundCompleted(GameRound round, PayoutResult payout)
@@ -155,25 +158,45 @@ namespace ColorGame.UI.Casino
 
             if (winningAmountText != null && payout.Winnings > 0)
             {
-                Restart(ref countRoutine, CountUpRoutine(payout.Winnings));
+                string net = payout.NetResult.ToString("+#,0;-#,0;0", CultureInfo.InvariantCulture);
+                if (countRoutine != null) StopCoroutine(countRoutine);
+                countRoutine = StartCoroutine(CountUpRoutine(payout.Winnings, net));
             }
 
-            Restart(ref bounceRoutine, BounceRoutine());
+            StartScale(BounceRoutine());
 
             if (!controller.GoldParticlesEnabled || pool == null) return;
 
+            // Find the real result boxes, so the sparks start on the right ones.
+            ResultSlotView[] slots = slotsContainer.GetComponentsInChildren<ResultSlotView>(false);
             int count = Mathf.Min(controller.ParticlesPerSlot, pool.Length);
-            for (int i = 0; i < payout.SlotMatches.Count && i < slotsContainer.childCount; i++)
+            for (int i = 0; i < payout.SlotMatches.Count && i < slots.Length; i++)
             {
-                if (payout.SlotMatches[i]) Burst(slotsContainer.GetChild(i).position, count);
+                if (payout.SlotMatches[i]) Burst(slots[i].transform.position, count);
             }
+        }
+
+        // ---------- Scale: reveal and bounce share ONE routine ----------
+
+        private void StartScale(IEnumerator routine)
+        {
+            if (scaleRoutine != null) StopCoroutine(scaleRoutine);
+            ResetScales();
+            scaleRoutine = StartCoroutine(routine);
+        }
+
+        private void ResetScales()
+        {
+            resultSection.localScale = sectionBase;
+            slotsContainer.localScale = slotsBase;
         }
 
         // ---------- Section animations ----------
 
         private void FadeTo(float target)
         {
-            Restart(ref fadeRoutine, FadeRoutine(target));
+            if (fadeRoutine != null) StopCoroutine(fadeRoutine);
+            fadeRoutine = StartCoroutine(FadeRoutine(target));
         }
 
         private IEnumerator FadeRoutine(float target)
@@ -216,11 +239,18 @@ namespace ColorGame.UI.Casino
             resultSection.localScale = sectionBase;
             tint.a = 0f;
             flash.color = tint;
-            revealRoutine = null;
+            scaleRoutine = null;
         }
 
         private IEnumerator BounceRoutine()
         {
+            // If a reveal was cut short, finish its alpha and flash cleanly.
+            if (fadeRoutine != null) { StopCoroutine(fadeRoutine); fadeRoutine = null; }
+            sectionGroup.alpha = 1f;
+            Color clear = controller.Gold;
+            clear.a = 0f;
+            flash.color = clear;
+
             const float duration = 0.35f;
             float peak = controller.WinBounceScale;
             float t = 0f;
@@ -231,28 +261,28 @@ namespace ColorGame.UI.Casino
                 yield return null;
             }
             slotsContainer.localScale = slotsBase;
-            bounceRoutine = null;
+            scaleRoutine = null;
         }
 
-        private IEnumerator CountUpRoutine(long target)
+        // Same text format as GameResultUI: "WINNINGS: 30  |  NET +10". Only the winnings number counts up.
+        private IEnumerator CountUpRoutine(long target, string netText)
         {
             float duration = Mathf.Max(0.1f, controller.WinCountUpDuration);
             float t = 0f;
-            winningAmountText.text = winningsPrefix + "0";
 
             while (t < 1f)
             {
                 t += Time.unscaledDeltaTime / duration;
                 long value = (long)Math.Round(target * (double)CasinoUIAnimationController.EaseOutCubic(t));
-                winningAmountText.text = winningsPrefix + value.ToString("N0", CultureInfo.InvariantCulture);
+                winningAmountText.text = "WINNINGS: " + value.ToString("N0", CultureInfo.InvariantCulture) + "  |  NET " + netText;
                 yield return null;
             }
 
-            winningAmountText.text = winningsPrefix + target.ToString("N0", CultureInfo.InvariantCulture);
+            winningAmountText.text = "WINNINGS: " + target.ToString("N0", CultureInfo.InvariantCulture) + "  |  NET " + netText;
             countRoutine = null;
         }
 
-        // ---------- Gold particles (fixed pool: no Instantiate or Destroy during play) ----------
+        // ---------- Gold sparks (fixed pool: no Instantiate or Destroy during play) ----------
 
         private void BuildPool()
         {
@@ -348,12 +378,6 @@ namespace ColorGame.UI.Casino
                 if (pool[i] != null) pool[i].gameObject.SetActive(false);
             }
             liveCount = 0;
-        }
-
-        private void Restart(ref Coroutine slot, IEnumerator routine)
-        {
-            if (slot != null) StopCoroutine(slot);
-            slot = StartCoroutine(routine);
         }
     }
 }

@@ -12,6 +12,7 @@ namespace ColorGame.UI.Casino
     {
         [Header("Master switches")]
         [SerializeField] private bool idleAnimationsEnabled = true;
+        [Tooltip("Small gold sparks on matching result boxes. Untick if WinEffectUI's confetti is enough for you.")]
         [SerializeField] private bool goldParticlesEnabled = true;
         [Tooltip("Halves particles, caps the pool and updates glow at 30 Hz.")]
         [SerializeField] private bool mobilePerformanceMode = true;
@@ -145,11 +146,16 @@ namespace ColorGame.UI.Casino
             return 1f + c3 * u * u * u + c1 * u * u;
         }
 
-        /// <summary>A stretched, non-raycast Image used for flashes. Created once, never per frame.</summary>
+        /// <summary>
+        /// A stretched, non-raycast Image used for flashes. Created once, never per frame.
+        /// It ignores Layout Groups, so it never becomes an extra slot inside a parent that has one.
+        /// </summary>
         public static Image CreateOverlay(RectTransform parent, string name, Sprite sprite, Color color)
         {
-            GameObject go = new GameObject(name, typeof(RectTransform), typeof(Image));
+            GameObject go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(LayoutElement));
             go.transform.SetParent(parent, false);
+            go.GetComponent<LayoutElement>().ignoreLayout = true;
+
             RectTransform rect = (RectTransform)go.transform;
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
