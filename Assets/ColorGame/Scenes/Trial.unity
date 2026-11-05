@@ -7497,6 +7497,100 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1498147638}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1504537140
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1504537143}
+  - component: {fileID: 1504537142}
+  - component: {fileID: 1504537141}
+  m_Layer: 0
+  m_Name: CasinoUI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1504537141
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1504537140}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2480d4ed073f2bb45bc559292cde7c71, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ColorGame.UI.Casino.CasinoResultAnimator
+  controller: {fileID: 1504537142}
+  gameManager: {fileID: 904205060}
+  resultSection: {fileID: 0}
+  slotsContainer: {fileID: 0}
+  effectsLayer: {fileID: 0}
+  winningAmountText: {fileID: 0}
+  flashSprite: {fileID: 0}
+  winningsPrefix: "WINNINGS: \u20B1"
+--- !u!114 &1504537142
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1504537140}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b81963e0f39ea04a8c51358e0dbefe6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ColorGame.UI.Casino.CasinoUIAnimationController
+  idleAnimationsEnabled: 1
+  goldParticlesEnabled: 1
+  mobilePerformanceMode: 1
+  gold: {r: 1, g: 0.84, b: 0.29, a: 1}
+  crimson: {r: 1, g: 0.25, b: 0.25, a: 1}
+  buttonPressScale: 0.94
+  buttonAnimDuration: 0.12
+  glowSpeed: 2.2
+  glowMinAlpha: 0.35
+  glowMaxAlpha: 0.9
+  shimmerDuration: 0.9
+  shimmerInterval: 5
+  shimmerIntensity: 0.22
+  shimmerWidth: 0.28
+  panelFadeDuration: 0.25
+  panelStartScale: 0.92
+  resultDuration: 0.45
+  resultStartScale: 0.92
+  dimWhileRolling: 0.7
+  resultFlashAlpha: 0.3
+  winCountUpDuration: 0.7
+  winBounceScale: 1.06
+  particlesPerSlot: 10
+  particleSpeed: 420
+  particleLife: 0.9
+  particleGravity: 900
+  particleSize: {x: 14, y: 26}
+  textPopScale: 1.18
+  textPopDuration: 0.35
+--- !u!4 &1504537143
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1504537140}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 290.0093, y: 1115.7463, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1507100439
 GameObject:
   m_ObjectHideFlags: 0
@@ -11659,3 +11753,4 @@ SceneRoots:
   - {fileID: 1800482074}
   - {fileID: 1678418567}
   - {fileID: 506067632}
+  - {fileID: 1504537143}
