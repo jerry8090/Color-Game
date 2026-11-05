@@ -54,9 +54,12 @@ namespace ColorGame.UI
 
         private Vector3 originalScale = Vector3.one;
 
+        private float targetMultiplier = 1f;
+
         private void Awake()
         {
-            originalScale = transform.localScale;
+          originalScale = transform.localScale;
+          enabled = false; // Update runs only while easing
         }
 
         public void Setup(int amount)
@@ -157,12 +160,30 @@ namespace ColorGame.UI
 
         public void SetSelected(bool selected)
         {
-            if (selectionOutline != null)
-                selectionOutline.enabled = selected;
+          if (selectionOutline != null)
+          selectionOutline.enabled = selected;
 
-            transform.localScale = selected
-                ? originalScale * selectedScale
-                : originalScale;
+          targetMultiplier = selected ? selectedScale : 1f;
+          enabled = true;
+        }
+
+        private void Update()
+        {
+         float current = transform.localScale.x / originalScale.x;
+
+         float next = Mathf.Lerp(
+          current,
+          targetMultiplier,
+          1f - Mathf.Exp(-16f * Time.unscaledDeltaTime)
+         );
+
+          if (Mathf.Abs(next - targetMultiplier) < 0.002f)
+         {
+          next = targetMultiplier;
+          enabled = false;
+         }
+
+          transform.localScale = originalScale * next;
         }
 
         public void SetAffordable(bool affordable)

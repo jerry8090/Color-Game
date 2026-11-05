@@ -58,38 +58,40 @@ namespace ColorGame.UI
 
         // Fires right after. If it was a gain, replay the number as a count-up.
         private void HandleTransactionAdded(WalletTransaction tx)
-        {
-            if (!isReady || !isActiveAndEnabled) return;
+{
+    if (!isReady || !isActiveAndEnabled) return;
 
-            bool isGain = tx.type == TransactionType.Win ||
-                          tx.type == TransactionType.Bonus ||
-                          tx.type == TransactionType.AdminTest;
+    bool isGain = tx.type == TransactionType.Win ||
+                  tx.type == TransactionType.Bonus ||
+                  tx.type == TransactionType.AdminTest;
+    bool isSpend = tx.type == TransactionType.Bet;
 
-            if (!isGain || tx.balanceAfter <= tx.balanceBefore) return;
+    if (!(isGain || isSpend) || tx.balanceAfter == tx.balanceBefore) return;
 
-            StopAnimation();
-            animationRoutine = StartCoroutine(CountUpRoutine(tx.balanceBefore, tx.balanceAfter));
-        }
+    StopAnimation();
+    animationRoutine = StartCoroutine(CountUpRoutine(tx.balanceBefore, tx.balanceAfter));
+}
 
-        private IEnumerator CountUpRoutine(long from, long to)
-        {
-            float elapsed = 0f;
+private IEnumerator CountUpRoutine(long from, long to)
+{
+    float elapsed = 0f;
+    float pop = to > from ? popScale : 1f; // spending counts down without the pop
 
-            while (elapsed < countUpDuration)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / countUpDuration);
-                float eased = 1f - (1f - t) * (1f - t); // fast at first, slows at the end
+    while (elapsed < countUpDuration)
+    {
+        elapsed += Time.deltaTime;
+        float t = Mathf.Clamp01(elapsed / countUpDuration);
+        float eased = 1f - (1f - t) * (1f - t);
 
-                long shown = from + (long)System.Math.Round((to - from) * (double)eased);
-                balanceText.text = Format(shown);
-                balanceText.transform.localScale = Vector3.one * (1f + (popScale - 1f) * Mathf.Sin(t * Mathf.PI));
-                yield return null;
-            }
+        long shown = from + (long)System.Math.Round((to - from) * (double)eased);
+        balanceText.text = Format(shown);
+        balanceText.transform.localScale = Vector3.one * (1f + (pop - 1f) * Mathf.Sin(t * Mathf.PI));
+        yield return null;
+    }
 
-            ShowInstant(to);
-            animationRoutine = null;
-        }
+    ShowInstant(to);
+    animationRoutine = null;
+}
 
         private void ShowInstant(long balance)
         {
