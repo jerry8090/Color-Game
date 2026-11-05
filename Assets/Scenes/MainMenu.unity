@@ -1925,6 +1925,7 @@ GameObject:
   - component: {fileID: 421612938}
   - component: {fileID: 421612940}
   - component: {fileID: 421612939}
+  - component: {fileID: 421612941}
   m_Layer: 0
   m_Name: SettingsButton
   m_TagString: Untagged
@@ -2009,7 +2010,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 3
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.96, g: 0.96, b: 0.96, a: 1}
@@ -2063,6 +2064,28 @@ MonoBehaviour:
   m_EffectColor: {r: 1, g: 0.8647259, b: 0.24056602, a: 0.35}
   m_EffectDistance: {x: 0, y: -6}
   m_UseGraphicAlpha: 1
+--- !u!95 &421612941
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 421612934}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: fc891072a71e6404c99f55a9dabe14ba, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &435948578
 GameObject:
   m_ObjectHideFlags: 0
@@ -2405,7 +2428,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Shared.UI.MainMenuController
   games:
   - displayName: COLOR GAME
-    sceneName: ColorGame
+    sceneName: Trial
     button: {fileID: 578847210}
     label: {fileID: 828290873}
   - displayName: SCATTER GAME
@@ -2450,6 +2473,7 @@ GameObject:
   - component: {fileID: 578847210}
   - component: {fileID: 578847212}
   - component: {fileID: 578847211}
+  - component: {fileID: 578847213}
   m_Layer: 0
   m_Name: ColorGameButton
   m_TagString: Untagged
@@ -2534,7 +2558,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 3
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.96, g: 0.96, b: 0.96, a: 1}
@@ -2588,6 +2612,28 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: 0.35}
   m_EffectDistance: {x: 0, y: -6}
   m_UseGraphicAlpha: 1
+--- !u!95 &578847213
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 578847206}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 2f9f7ad1ef4b3b14aa7b22ab94ed4eed, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &592881045
 GameObject:
   m_ObjectHideFlags: 0
