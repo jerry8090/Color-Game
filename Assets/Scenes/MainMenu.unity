@@ -2459,7 +2459,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Shared.UI.MainMenuController
   games:
   - displayName: COLOR GAME
-    sceneName: Trial
+    sceneName: ColorGame
     button: {fileID: 578847210}
     label: {fileID: 828290873}
   - displayName: SCATTER GAME
