@@ -8,6 +8,7 @@ namespace ColorGame.UI
 {
     /// <summary>
     /// One of the three result boxes. Display only.
+    /// The scale you set on the object in the scene is remembered, so every slot can have its own size.
     /// </summary>
     public class ResultSlotView : MonoBehaviour
     {
@@ -26,16 +27,22 @@ namespace ColorGame.UI
         [SerializeField] private float popDuration = 0.18f;
 
         private float baseScale = 1f;
+        private Vector3 originalScale = Vector3.one;
         private Coroutine popRoutine;
         private bool isReady;
 
         public void Init()
         {
+            if (isReady) return; // never capture the scale twice
+
             if (background == null || highlightOutline == null || label == null || canvasGroup == null)
             {
-                Debug.LogError("[ResultSlotView] A reference is missing on the ResultSlot prefab.", this);
+                Debug.LogError("[ResultSlotView] A reference is missing on " + name +
+                               " (Background, Highlight Outline, Label and Canvas Group are required).", this);
                 return;
             }
+
+            originalScale = transform.localScale;
 
             highlightOutline.effectColor = highlightColor;
             highlightOutline.effectDistance = highlightDistance;
@@ -78,7 +85,7 @@ namespace ColorGame.UI
             StopPop();
             baseScale = highlighted ? highlightedScale : 1f;
             highlightOutline.enabled = highlighted;
-            transform.localScale = Vector3.one * baseScale;
+            transform.localScale = originalScale * baseScale;
         }
 
         public void SetDimmed(bool dimmed)
@@ -107,11 +114,11 @@ namespace ColorGame.UI
             {
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / popDuration);
-                transform.localScale = Vector3.one * Mathf.Lerp(popScale, baseScale, t);
+                transform.localScale = originalScale * Mathf.Lerp(popScale, baseScale, t);
                 yield return null;
             }
 
-            transform.localScale = Vector3.one * baseScale;
+            transform.localScale = originalScale * baseScale;
             popRoutine = null;
         }
     }

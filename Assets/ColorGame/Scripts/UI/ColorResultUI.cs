@@ -8,7 +8,8 @@ using ColorGame.Machine;
 namespace ColorGame.UI
 {
     /// <summary>
-    /// Owns the three result boxes.
+    /// Controls the three result boxes. The boxes are normal scene objects (ResultSlot1/2/3) that you
+    /// assign in the Inspector, so each one can be customized on its own. Nothing is instantiated or destroyed.
     /// PHYSICAL machine (Machine3DPresenter): the manager announces the roll with NO colors. The boxes stay "?"
     ///   until every cube has settled and the real result is shown, then they reveal left to right.
     /// 2D ColorMachine: boxes stay "?" and reveal each color when its die settles.
@@ -17,10 +18,14 @@ namespace ColorGame.UI
     /// </summary>
     public class ColorResultUI : MonoBehaviour
     {
+        [Header("References")]
         [SerializeField] private ColorGameConfig config;
         [SerializeField] private ColorGameManager gameManager;
-        [SerializeField] private ResultSlotView slotPrefab;
-        [SerializeField] private Transform slotContainer;
+
+        [Header("Result Slots (scene objects, left to right)")]
+        [SerializeField] private ResultSlotView resultSlot1;
+        [SerializeField] private ResultSlotView resultSlot2;
+        [SerializeField] private ResultSlotView resultSlot3;
 
         [Header("Optional")]
         [Tooltip("Only for the OLD 2D ColorMachine. Leave empty for the 3D machine.")]
@@ -41,21 +46,56 @@ namespace ColorGame.UI
 
         private void Awake()
         {
-            if (config == null || gameManager == null || slotPrefab == null || slotContainer == null)
+            if (config == null || gameManager == null)
             {
-                Debug.LogError("[ColorResultUI] A reference is missing in the Inspector.", this);
+                Debug.LogError("[ColorResultUI] Config or Game Manager is missing in the Inspector.", this);
                 return;
             }
 
-            for (int i = 0; i < ColorGameConfig.ResultSlotCount; i++)
+            if (!TryAddSlot(resultSlot1, "Result Slot 1") ||
+                !TryAddSlot(resultSlot2, "Result Slot 2") ||
+                !TryAddSlot(resultSlot3, "Result Slot 3"))
             {
-                ResultSlotView slot = Instantiate(slotPrefab, slotContainer);
-                slot.name = "ResultSlot" + (i + 1);
-                slot.Init();
-                slots.Add(slot);
+                slots.Clear();
+                return;
             }
 
+            if (slots.Count != ColorGameConfig.ResultSlotCount)
+            {
+                Debug.LogError($"[ColorResultUI] Expected {ColorGameConfig.ResultSlotCount} result slots but found {slots.Count}.", this);
+                slots.Clear();
+                return;
+            }
+
+            foreach (ResultSlotView slot in slots) slot.Init();
+
             isReady = true;
+        }
+
+        // Validates one slot reference and adds it to the list.
+        private bool TryAddSlot(ResultSlotView slot, string fieldName)
+        {
+            if (slot == null)
+            {
+                Debug.LogError($"[ColorResultUI] {fieldName} is not assigned. Drag the ResultSlot object from the Hierarchy into it.", this);
+                return false;
+            }
+
+            // A prefab asset from the Project window has no valid scene. Only scene objects are allowed.
+            if (!slot.gameObject.scene.IsValid())
+            {
+                Debug.LogError($"[ColorResultUI] {fieldName} points to a prefab asset. Assign the ResultSlot object that is inside the scene.", this);
+                return false;
+            }
+
+            if (slots.Contains(slot))
+            {
+                Debug.LogError($"[ColorResultUI] {fieldName} is the same object as another slot. Each slot must be different.", this);
+                return false;
+            }
+
+            slots.Add(slot);
+            return true;
         }
 
         private void OnEnable()

@@ -40,9 +40,12 @@ namespace ColorGame.Gameplay
         [SerializeField] private int countdownSoundSeconds = 5;
 
         [Header("Optional")]
-        [Tooltip("Hidden while the cycle is ON, shown again when it is OFF. Drag the RollButton object here.")]
         [SerializeField] private GameObject manualRollButton;
-        [Tooltip("Shows 'PLACE YOUR BETS  12'. Leave empty for no countdown text.")]
+
+        [Tooltip("Displays PLACE YOUR BETS")]
+        [SerializeField] private TMP_Text bettingStatusText;
+
+        [Tooltip("Displays countdown numbers only")]
         [SerializeField] private TMP_Text countdownText;
 
         /// <summary>Raised once per second in the final seconds. Carries the whole seconds left (1 = last second).</summary>
@@ -79,7 +82,7 @@ namespace ColorGame.Gameplay
         {
             phase = Phase.Off;
             remaining = 0f;
-            SetText(string.Empty);
+            ClearCountdownUI();
 
             if (buttonHiddenByUs && manualRollButton != null) manualRollButton.SetActive(true);
             buttonHiddenByUs = false;
@@ -102,7 +105,7 @@ namespace ColorGame.Gameplay
                 if (phase != Phase.Off)
                 {
                     phase = Phase.Off;
-                    SetText(string.Empty);
+                    ClearCountdownUI();
                 }
                 return;
             }
@@ -122,7 +125,7 @@ namespace ColorGame.Gameplay
         // The window opens only when the machine is completely ready: no round, cubes back on the shelf.
         private void TryOpenWindow()
         {
-            SetText(string.Empty);
+            ClearCountdownUI();
 
             if (gameManager.IsRoundRunning || gameManager.IsMachineBusy || gameManager.State != ColorGame.Core.GameState.Idle) return;
             if (!gameManager.BeginBettingWindow()) return;
@@ -133,32 +136,34 @@ namespace ColorGame.Gameplay
         }
 
         private void RunCountdown()
-        {
-            remaining -= Time.deltaTime;
+{
+    remaining -= Time.deltaTime;
 
-            if (remaining <= 0f)
-            {
-                CloseWindow();
-                return;
-            }
+    if (remaining <= 0f)
+    {
+        CloseWindow();
+        return;
+    }
 
-            int secondsLeft = Mathf.CeilToInt(remaining);
+    int secondsLeft = Mathf.CeilToInt(remaining);
 
-            if (secondsLeft != lastSecond)
-            {
-                lastSecond = secondsLeft;
-                if (secondsLeft >= 1 && secondsLeft <= countdownSoundSeconds) OnCountdownTick?.Invoke(secondsLeft);
-            }
+    if (secondsLeft != lastSecond)
+    {
+        lastSecond = secondsLeft;
 
-            SetText("PLACE YOUR BETS  " + secondsLeft);
-        }
+        if (secondsLeft >= 1 && secondsLeft <= countdownSoundSeconds)
+            OnCountdownTick?.Invoke(secondsLeft);
+    }
+
+    UpdateCountdownUI(secondsLeft);
+}
 
         // The deadline. The manager decides wager or no bet and starts the machine either way.
         private void CloseWindow()
         {
             remaining = 0f;
             phase = Phase.WaitingForRound;
-            SetText(string.Empty);
+            ClearCountdownUI();
 
             gameManager.CloseBettingAndStartRound();
 
@@ -184,9 +189,22 @@ namespace ColorGame.Gameplay
             }
         }
 
-        private void SetText(string value)
-        {
-            if (countdownText != null && countdownText.text != value) countdownText.text = value;
-        }
+        private void UpdateCountdownUI(int secondsLeft)
+{
+    if (bettingStatusText != null)
+        bettingStatusText.text = "PLACE YOUR BETS  " + secondsLeft;
+
+    if (countdownText != null)
+        countdownText.text = secondsLeft.ToString();
+}
+
+private void ClearCountdownUI()
+{
+    if (bettingStatusText != null)
+        bettingStatusText.text = string.Empty;
+
+    if (countdownText != null)
+        countdownText.text = string.Empty;
+}
     }
 }
