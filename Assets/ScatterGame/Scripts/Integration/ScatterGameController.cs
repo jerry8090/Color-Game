@@ -252,6 +252,7 @@ namespace ScatterGame.Integration
         private void SetAuto(bool on)
 {
     autoOn = on;
+    ScatterFx.RaiseAutoChanged(on);
     autoTimer = 0f;
 
     // Update the Auto button image.
@@ -323,6 +324,7 @@ namespace ScatterGame.Integration
             hud.SetWin(result.CreditsPaid, false);
             hud.SetBalance(walletManager.GetBalance(), false);
             if (winOverlay != null) winOverlay.Finish(result.CreditsPaid);
+            ScatterFx.RaiseRoundSettled(result.CreditsPaid, bet);
 
             if (result.CreditsPaid > 0)
             {
@@ -389,6 +391,7 @@ namespace ScatterGame.Integration
                     foreach (GridPosition position in win.Positions) winning.Add(position);
                 }
 
+                ScatterFx.RaiseCascadeWin(winning, step.Multiplier, step.WinMilli, currentBet);
                 yield return grid.Highlight(winning);
 
                 runningMilli += step.WinMilli;
