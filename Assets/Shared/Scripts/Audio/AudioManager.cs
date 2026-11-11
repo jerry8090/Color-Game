@@ -23,7 +23,13 @@ namespace Shared.Audio
         CountdownTick,
         CountdownFinal,
         Match2,
-        Match3
+        Match3,
+
+        ChipPlace,
+        ChipRemove,
+        BetConfirm,
+        WheelSpin,
+        BallDrop
     }
 
     /// <summary>Which volume slider and playback path a sound uses.</summary>
@@ -312,6 +318,7 @@ namespace Shared.Audio
                 case SfxType.CountdownTick:
                 case SfxType.CountdownFinal:
                     return SfxGroup.Countdown;
+                case SfxType.WheelSpin:
                 case SfxType.RackMove:
                     return SfxGroup.Machine;
                 default:

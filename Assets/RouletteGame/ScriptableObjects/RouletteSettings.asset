@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30204f56f83d02149b67817adf430039, type: 3}
+  m_Name: RouletteSettings
+  m_EditorClassIdentifier: Assembly-CSharp::RouletteGame.Data.RouletteSettings
+  chipAmounts: 0a000000140000003200000064000000f4010000
+  chipColors:
+  - {r: 0.25882354, g: 0.52156866, b: 0.95686275, a: 1}
+  - {r: 0.20392157, g: 0.65882355, b: 0.3254902, a: 1}
+  - {r: 0.91764706, g: 0.2627451, b: 0.20784314, a: 1}
+  - {r: 0.5568628, g: 0.14117648, b: 0.6666667, a: 1}
+  - {r: 0.15686275, g: 0.15686275, b: 0.1882353, a: 1}
+  defaultChipIndex: 0
+  maxBetPerArea: 100000
+  maxTotalBet: 1000000
+  spin:
+    TotalDuration: 7
+    DropFraction: 0.68
+    WheelStartSpeed: 70
+    WheelEndSpeed: 0
+    BallStartSpeed: 640
+    BallDropSpeed: 140
+  fastForwardSpeed: 4
+  resultAutoCloseSeconds: 0
+  historyLimit: 100
+  lastNumbersShown: 10
